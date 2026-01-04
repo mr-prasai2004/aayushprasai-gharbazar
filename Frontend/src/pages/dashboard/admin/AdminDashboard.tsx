@@ -1,10 +1,11 @@
 import React from 'react';
 import { Eye, CheckCircle } from 'lucide-react';
+import DashboardLayout from '../../../components/Layout/DashboardLayout';
 
 export const AdminDashboard: React.FC = () => {
-    return (
-        
-        <div className="p-6">
+  return (
+    <DashboardLayout role="admin" title="Admin Dashboard">
+      <div className="p-6">
             <h1>Admin Dashboard</h1>
             {/* Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -72,7 +73,7 @@ export const AdminDashboard: React.FC = () => {
                     </tbody>
                 </table>
             </div>
-
         </div>
-    );
+    </DashboardLayout>
+  );
 };

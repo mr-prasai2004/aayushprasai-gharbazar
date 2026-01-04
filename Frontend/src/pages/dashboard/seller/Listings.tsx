@@ -29,7 +29,7 @@ export const Listings: React.FC<Props> = ({ listings, onEdit, onDelete, onView }
           <tbody className="divide-y divide-gray-100">
             {listings.map((item) => (
               <tr key={item.property_id} className="hover:bg-gray-50">
-                <td className="px-6 py-3 font-medium flex items-center gap-3 min-w-[200px]">
+                <td className="px-6 py-3 font-medium flex items-center gap-3 min-w-50">
                   <img src={item.images?.[0]?.image_url || ''} alt="" className="w-10 h-10 rounded object-cover" />
                   {item.title}
                 </td>
