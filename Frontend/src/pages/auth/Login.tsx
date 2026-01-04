@@ -27,7 +27,7 @@ export const Login: React.FC = () => {
     localStorage.setItem('currentUser', JSON.stringify(userData));
 
     // Logic to authenticate
-    if (role === "admin") navigate('/dashboard/buyer');
+    if (role === "admin") navigate('/dashboard/admin');
     else if (role === "admin") navigate('/dashboard/seller');
     else navigate('/dashboard/admin');
   };
