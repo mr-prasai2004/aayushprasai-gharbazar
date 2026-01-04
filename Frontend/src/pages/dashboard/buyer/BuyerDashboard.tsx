@@ -64,11 +64,7 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => (
 
 export const BuyerDashboard: React.FC = () => {
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Your Dashboard</h1>
-      <p className="text-gray-500 mb-6">
-        Here's an overview of your real estate activities.
-      </p>
+
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
