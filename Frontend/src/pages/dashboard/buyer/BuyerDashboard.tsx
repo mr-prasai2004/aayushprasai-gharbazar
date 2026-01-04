@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, MessageSquare, Search } from 'lucide-react';
+import DashboardLayout from '../../../components/Layout/DashboardLayout';
 
 // Dummy property data with images
 const DUMMY_PROPERTIES = [
@@ -122,6 +123,7 @@ export const BuyerDashboard: React.FC = () => {
           ))}
         </div>
       </section>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { CheckCircle, Heart, MessageSquare, TrendingUp, Eye, Edit2, Trash2 } from 'lucide-react';
-import Listings from './Listings'; // import the Listings component
+import { CheckCircle, Heart, MessageSquare, TrendingUp } from 'lucide-react';
+import DashboardLayout from '../../../components/Layout/DashboardLayout';
+import Listings from './Listings';
 
 // Dummy property data
 const DUMMY_PROPERTIES = [
@@ -102,8 +103,9 @@ export const SellerDashboard: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      {/* Tabs */}
+    <DashboardLayout role="seller" title="Seller Dashboard">
+      <div className="p-4">
+        {/* Tabs */}
       <div className="bg-white p-2 rounded-lg shadow-sm mb-6 inline-flex space-x-2 overflow-x-auto max-w-full">
         {['Overview', 'Add New Property', 'My Listings', 'Messages'].map(tab => (
           <button
@@ -120,9 +122,10 @@ export const SellerDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Tab Content */}
-      {renderContent()}
-    </div>
+        {/* Tab Content */}
+        {renderContent()}
+      </div>
+    </DashboardLayout>
   );
 };
 
