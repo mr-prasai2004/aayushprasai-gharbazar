@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Login, Signup } from "./pages/auth";
 import { AdminDashboard } from "./pages/dashboard/admin/AdminDashboard";
+import { BuyerDashboard } from "./pages/dashboard/buyer/BuyerDashboard";
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard/admin" element={<AdminDashboard />} />
+        <Route path="/dashboard/buyer" element={<BuyerDashboard />} />
       </Routes>
     </Router>
   );
