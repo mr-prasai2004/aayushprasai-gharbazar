@@ -7,7 +7,7 @@ export const BuyerDashboard: React.FC = () => {
       <div className="p-4">
         <h1 className="text-2xl font-bold mb-2">Buyer Dashboard</h1>
         <p className="text-gray-500 mb-6">
-          Here's an overview of your real estate activities.
+          Here's an overview of your real estate activity.
         </p>
 
         {/* Stats */}
