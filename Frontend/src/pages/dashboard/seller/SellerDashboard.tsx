@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { CheckCircle, Heart, MessageSquare, TrendingUp } from 'lucide-react';
+import { CheckCircle, Heart, MessageSquare, TrendingUp, Eye, Edit2, Trash2 } from 'lucide-react';
+import Listings from './Listings'; // import the Listings component
 
 // Dummy property data
 const DUMMY_PROPERTIES = [
@@ -10,7 +11,9 @@ const DUMMY_PROPERTIES = [
     price: 250000,
     bedrooms: 2,
     bathrooms: 1,
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    property_type: 'Apartment',
+    status: 'For Sale',
+    images: [{ image_url: 'https://images.unsplash.com/photo-1560185127-6d4f1c0b98d0?auto=format&fit=crop&w=800&q=80' }]
   },
   {
     property_id: 'p2',
@@ -19,34 +22,29 @@ const DUMMY_PROPERTIES = [
     price: 1200000,
     bedrooms: 5,
     bathrooms: 4,
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    property_type: 'Villa',
+    status: 'For Sale',
+    images: [{ image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80' }]
   },
   {
     property_id: 'p3',
-    title: 'Modern Villa Near Mountains',
+    title: 'Modern Condo Near Beach',
     location: 'Miami, FL',
     price: 450000,
     bedrooms: 3,
     bathrooms: 2,
-    image: 'https://images.unsplash.com/photo-1599423300746-b62533397364?auto=format&fit=crop&w=800&q=80',
+    property_type: 'Condo',
+    status: 'Sold',
+    images: [{ image_url: 'https://images.unsplash.com/photo-1599423300746-b62533397364?auto=format&fit=crop&w=800&q=80' }]
   },
 ];
 
-// Simple PropertyCard
-const PropertyCard: React.FC<{ property: typeof DUMMY_PROPERTIES[0] }> = ({ property }) => (
-  <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-    <img src={property.image} alt={property.title} className="w-full h-40 object-cover" />
-    <div className="p-4">
-      <h3 className="font-bold text-gray-800">{property.title}</h3>
-      <p className="text-gray-500 text-sm">{property.location}</p>
-      <p className="text-gray-700 font-semibold mt-2">${property.price.toLocaleString()}</p>
-      <p className="text-gray-500 text-sm mt-1">{property.bedrooms} Beds • {property.bathrooms} Baths</p>
-    </div>
-  </div>
-);
-
 export const SellerDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('Overview');
+
+  const handleEdit = (property: any) => alert(`Edit ${property.title}`);
+  const handleDelete = (id: string) => alert(`Delete property with ID: ${id}`);
+  const handleView = (id: string) => alert(`View property with ID: ${id}`);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -56,7 +54,7 @@ export const SellerDashboard: React.FC = () => {
             <div className="bg-white p-6 rounded-lg border shadow-sm flex justify-between items-center">
               <div>
                 <p className="text-sm text-gray-500">Total Listings</p>
-                <h3 className="text-2xl font-bold mt-1">3</h3>
+                <h3 className="text-2xl font-bold mt-1">{DUMMY_PROPERTIES.length}</h3>
               </div>
               <TrendingUp className="h-8 w-8 text-gray-300" />
             </div>
@@ -78,11 +76,12 @@ export const SellerDashboard: React.FC = () => {
         );
       case 'My Listings':
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {DUMMY_PROPERTIES.map(p => (
-              <PropertyCard key={p.property_id} property={p} />
-            ))}
-          </div>
+          <Listings 
+            listings={DUMMY_PROPERTIES} 
+            onEdit={handleEdit} 
+            onDelete={handleDelete} 
+            onView={handleView} 
+          />
         );
       case 'Messages':
         return (
@@ -121,8 +120,10 @@ export const SellerDashboard: React.FC = () => {
         ))}
       </div>
 
+      {/* Tab Content */}
       {renderContent()}
     </div>
   );
 };
 
+export default SellerDashboard;
