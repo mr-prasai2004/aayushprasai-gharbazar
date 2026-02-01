@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Bed, Bath, Move, Heart } from 'lucide-react';
-import { Property } from '../../types';
+import { Property } from '../types';
 
 interface PropertyCardProps {
   property: Property;
