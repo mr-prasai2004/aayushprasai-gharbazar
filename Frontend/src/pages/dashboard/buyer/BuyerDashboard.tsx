@@ -1,6 +1,6 @@
 import React from 'react';
 import { Heart, MessageSquare, Search } from 'lucide-react';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
+import DashboardLayout from '../../../components/Layout/DashboardLayout';
 
 export const BuyerDashboard: React.FC = () => {
   return (
