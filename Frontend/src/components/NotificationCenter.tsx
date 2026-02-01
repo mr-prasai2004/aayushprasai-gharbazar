@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { Notification } from '../../types';
+import { Notification } from '../types';
 
 interface NotificationCenterProps {
   notifications?: Notification[];
@@ -81,11 +81,11 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             <div className="divide-y divide-gray-200">
               {notifications.map(notification => (
                 <div
-                  key={notification.notification_id}
+                  key={notification.notificationId}
                   className={`p-4 ${getNotificationColor(notification.type)} cursor-pointer hover:opacity-80 transition ${
                     !notification.read ? 'font-semibold' : ''
                   }`}
-                  onClick={() => handleMarkAsRead(notification.notification_id)}
+                  onClick={() => handleMarkAsRead(notification.notificationId)}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 mt-0.5">
@@ -94,13 +94,13 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     <div className="flex-1">
                       <h4 className="font-semibold text-gray-900 text-sm">{notification.title}</h4>
                       <p className="text-gray-700 text-sm mt-1">{notification.message}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notification.property_title}</p>
-                      {notification.action_notes && (
-                        <p className="text-xs text-gray-600 mt-2 italic">{notification.action_notes}</p>
+                      <p className="text-xs text-gray-500 mt-1">{notification.propertyTitle}</p>
+                      {notification.actionNotes && (
+                        <p className="text-xs text-gray-600 mt-2 italic">{notification.actionNotes}</p>
                       )}
                       <p className="text-xs text-gray-400 mt-2">
-                        {new Date(notification.created_at).toLocaleDateString()} at{' '}
-                        {new Date(notification.created_at).toLocaleTimeString([], {
+                        {new Date(notification.createdAt).toLocaleDateString()} at{' '}
+                        {new Date(notification.createdAt).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit'
                         })}

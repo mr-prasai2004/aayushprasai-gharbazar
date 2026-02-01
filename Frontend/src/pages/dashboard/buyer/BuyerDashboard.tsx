@@ -1,5 +1,7 @@
 import React from 'react';
 import { Heart, MessageSquare, Search } from 'lucide-react';
+import { DashboardLayout } from '../../../components/Layout';
+import { UserRole } from '../../../types';
 
 
 const DUMMY_PROPERTIES = [
@@ -64,6 +66,7 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => (
 
 export const BuyerDashboard: React.FC = () => {
   return (
+    <DashboardLayout role={UserRole.BUYER} title={`Welcome, Buyer`}>
     <div className="p-4">
       <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Your Dashboard</h1>
       <p className="text-gray-500 mb-6">
@@ -127,5 +130,6 @@ export const BuyerDashboard: React.FC = () => {
         </div>
       </section>
     </div>
+    </DashboardLayout>
   );
 };

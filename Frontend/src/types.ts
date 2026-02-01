@@ -1,7 +1,9 @@
+// ERD Based Types
+
 export enum UserRole {
-  BUYER = 'buyer',
-  SELLER = 'seller',
-  ADMIN = 'admin'
+  BUYER = 'BUYER',
+  SELLER = 'SELLER',
+  ADMIN = 'ADMIN'
 }
 
 export interface User {
@@ -99,3 +101,15 @@ export interface Property {
   averageRating?: number; // Added field
   reviewCount?: number; // Added field
 }
+export interface PropertyFilter {
+  propertyType?: PropertyType;
+  minPrice?: number;
+  maxPrice?: number;
+  minBedrooms?: number;
+  maxBedrooms?: number;
+  minBathrooms?: number;
+  maxBathrooms?: number;
+  city?: string;
+  state?: string;
+  status?: PropertyStatus;
+} 
