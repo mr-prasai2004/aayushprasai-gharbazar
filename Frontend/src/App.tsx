@@ -6,6 +6,8 @@ import { SellerDashboard } from "./pages/dashboard/seller/SellerDashboard";
 import { ReviewsFeedback } from "./pages/dashboard/admin/ReviewFeedback";
 import { ManageUsers } from "./pages/dashboard/admin/ManageUsers";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AddProperty } from "./pages/properties/AddProperty";
+
 
 
 function App() {
@@ -21,7 +23,14 @@ function App() {
         <Route path="/dashboard/seller" element={<SellerDashboard />} />
         <Route path="/dashboard/reviews" element={<ReviewsFeedback />} />
         <Route path="/dashboard/users" element={<ManageUsers />} />
-        <Route element={<ProtectedRoute allowedRoles={['BUYER', 'SELLER', 'ADMIN']} />}></Route>
+        <Route element={<ProtectedRoute allowedRoles={['BUYER', 'SELLER', 'ADMIN']} />}>
+        <Route path="/dashboard/add-property" element={<AddProperty />} />
+        <Route path="/dashboard/listings" element={<SellerDashboard />} />
+        <Route path="/dashboard/messages" element={<SellerDashboard />} />
+        <Route path="/properties/:id" element={<PropertyDetails />} />
+
+        
+        </Route>
 
       </Routes>
     </Router>
