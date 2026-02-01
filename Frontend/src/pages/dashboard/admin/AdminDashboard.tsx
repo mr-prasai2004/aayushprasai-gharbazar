@@ -1,10 +1,12 @@
 import React from 'react';
 import { Eye, CheckCircle } from 'lucide-react';
-import DashboardLayout from '../../../components/Layout/DashboardLayout';
+import DashboardLayout from '../../../components/layout/DashboardLayout';
+import { UserRole} from '../../../types';
+
 
 export const AdminDashboard: React.FC = () => {
   return (
-    <DashboardLayout role="admin" title="Admin Dashboard">
+    <DashboardLayout role={UserRole.ADMIN} title="Dashboard Overview">
       <div className="p-6">
             <h1>Admin Dashboard</h1>
             {/* Stats Row */}
