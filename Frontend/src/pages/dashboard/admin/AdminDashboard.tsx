@@ -1,6 +1,6 @@
 import React from 'react';
 import { Eye, CheckCircle } from 'lucide-react';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
+import {DashboardLayout} from '../../../components/Layout';
 import { UserRole} from '../../../types';
 
 
