@@ -4,7 +4,7 @@ import { LayoutDashboard, Heart, Calendar, User, Settings, PlusCircle, List, Mes
 
 
 interface SidebarProps {
-  role: 'admin' | 'seller' | 'buyer';
+role: "admin" | "seller" | "buyer" | string;
   activePath: string;
 }
 
@@ -36,7 +36,7 @@ export const DashboardSidebar: React.FC<SidebarProps> = ({ role, activePath }) =
     { name: 'Settings', icon: Settings, path: '/dashboard/admin/settings' },
   ];
 
-  const links = role === 'buyer' ? buyerLinks : role === 'seller' ? sellerLinks : adminLinks;
+  const links = role === "Buyer" ? buyerLinks : role === "Seller" ? sellerLinks : adminLinks;
 
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 min-h-screen flex flex-col">

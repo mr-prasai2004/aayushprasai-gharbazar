@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, User } from 'lucide-react';
-
 interface UserData {
    email: string;
-   role: 'admin' | 'seller' | 'buyer';
+   role: "admin" | "seller" | "buyer" | string;
 }
 
-import {DashboardSidebar} from './DashboardSidebar';
 
-const DashboardLayout: React.FC<{ children: React.ReactNode; role: 'admin' | 'seller' | 'buyer'; title?: string }> = ({ children, role, title }) => {
+import { DashboardSidebar } from './DashboardSidebar';
+
+export const DashboardLayout: React.FC<{ children: React.ReactNode; role: "admin" | "seller" | "buyer" | string; title?: string }> = ({ children, role, title }) => {
    const [user, setUser] = useState<UserData | null>(null);
    const [menuOpen, setMenuOpen] = useState(false);
    const avatarRef = useRef<HTMLDivElement | null>(null);
    const navigate = useNavigate();
-   const location = useLocation();
 
    useEffect(() => {
       const storedUser = localStorage.getItem('currentUser');
@@ -58,6 +57,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode; role: 'admin' | 'se
       const index = user?.email.charCodeAt(0) || 0;
       return colors[index % colors.length];
    };
+  const location = useLocation();
 
   return (
     <div className="flex h-screen bg-white">
@@ -91,7 +91,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode; role: 'admin' | 'se
                               <div className="px-3 py-2 text-xs text-gray-500 truncate">{user?.email ?? 'Guest'}</div>
                               <button onClick={() => { setMenuOpen(false); navigate('/profile'); }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100">Profile</button>
                               <button onClick={() => { setMenuOpen(false); navigate('/profile/settings'); }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100">Settings</button>
-                                             {user?.role === 'admin' && (
+                                             {user?.role === 'ADMIN' && (
                                  <button onClick={() => { setMenuOpen(false); navigate('/dashboard/users'); }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100">Manage Users</button>
                               )}
                               <div className="border-t my-1" />
@@ -108,5 +108,3 @@ const DashboardLayout: React.FC<{ children: React.ReactNode; role: 'admin' | 'se
     </div>
   );
 };
-
-export default DashboardLayout;

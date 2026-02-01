@@ -1,2 +1,4 @@
-export { default as DashboardLayout } from './DashboardLayout';
-export {  DashboardSidebar } from './DashboardSidebar';
+export { Navbar } from './Navbar';
+export { Footer } from './Footer';
+export { DashboardSidebar } from './DashboardSidebar';
+export { DashboardLayout } from './DashboardLayout';
