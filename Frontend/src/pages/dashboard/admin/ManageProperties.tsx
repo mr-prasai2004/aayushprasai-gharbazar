@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardLayout } from '../../../components/layout';
+import { DashboardLayout } from '../../../components/Layout';
 import { UserRole } from '../../../types';
 import { propertiesApi } from '../../../services/api';
 import { Trash2, Edit2, X } from 'lucide-react';
