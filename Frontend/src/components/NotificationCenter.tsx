@@ -88,7 +88,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   onClick={() => handleMarkAsRead(notification.notificationId)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
+                    <div className="shrink-0 mt-0.5">
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1">
@@ -107,7 +107,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                       </p>
                     </div>
                     {!notification.read && (
-                      <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-600 mt-1.5" />
+                      <div className="shrink-0 w-2 h-2 rounded-full bg-blue-600 mt-1.5" />
                     )}
                   </div>
                 </div>

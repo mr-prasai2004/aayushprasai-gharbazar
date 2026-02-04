@@ -45,12 +45,143 @@ export const PropertyDetails: React.FC = () => {
             if (!id) return;
             try {
                 setLoading(true);
-                const [propData, reviewsData] = await Promise.all([
-                    propertiesApi.getById(id),
-                    reviewsApi.getByProperty(id).catch(() => []) // Fallback to empty reviews if fails
-                ]);
-                setProperty(propData);
-                setReviews(reviewsData);
+                
+                // Dummy properties data
+                const dummyPropertiesMap: { [key: string]: any } = {
+                    'p1': {
+                        propertyId: 'p1',
+                        ownerId: 'seller1',
+                        title: 'Cozy Apartment in Downtown',
+                        description: 'Beautiful apartment with modern amenities in the heart of the city. Perfect location near shopping centers and restaurants.',
+                        propertyType: 'Apartment',
+                        price: 250000,
+                        location: 'Downtown Manhattan',
+                        city: 'New York',
+                        state: 'NY',
+                        bedrooms: 2,
+                        bathrooms: 1,
+                        areaSqft: 900,
+                        status: 'For Sale',
+                        listedDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+                        images: [
+                            { imageId: '1', propertyId: 'p1', imageUrl: 'https://images.unsplash.com/photo-1560185127-6d4f1c0b98d0?auto=format&fit=crop&w=1200&q=80', displayOrder: 1 },
+                            { imageId: '2', propertyId: 'p1', imageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80', displayOrder: 2 }
+                        ],
+                        amenities: ['WiFi', 'AC', 'Gym', 'Pool', 'Parking'],
+                        averageRating: 4.5,
+                        reviewCount: 12
+                    },
+                    'p2': {
+                        propertyId: 'p2',
+                        ownerId: 'seller2',
+                        title: 'Luxury Villa with Pool',
+                        description: 'Stunning luxury villa with private pool and garden. Spacious living areas with premium finishes.',
+                        propertyType: 'Villa',
+                        price: 1200000,
+                        location: 'Beverly Hills',
+                        city: 'Los Angeles',
+                        state: 'CA',
+                        bedrooms: 5,
+                        bathrooms: 4,
+                        areaSqft: 4500,
+                        status: 'For Sale',
+                        listedDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+                        images: [
+                            { imageId: '3', propertyId: 'p2', imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80', displayOrder: 1 },
+                            { imageId: '4', propertyId: 'p2', imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80', displayOrder: 2 }
+                        ],
+                        amenities: ['Pool', 'Garden', 'Gym', 'Home Theater', 'Security System'],
+                        averageRating: 4.8,
+                        reviewCount: 25
+                    },
+                    'p3': {
+                        propertyId: 'p3',
+                        ownerId: 'seller3',
+                        title: 'Modern House with Garden',
+                        description: 'Contemporary house with spacious garden perfect for families. Recently renovated with modern kitchen.',
+                        propertyType: 'House',
+                        price: 450000,
+                        location: 'Suburbs',
+                        city: 'Chicago',
+                        state: 'IL',
+                        bedrooms: 4,
+                        bathrooms: 2,
+                        areaSqft: 2200,
+                        status: 'For Sale',
+                        listedDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+                        images: [
+                            { imageId: '5', propertyId: 'p3', imageUrl: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80', displayOrder: 1 }
+                        ],
+                        amenities: ['Garden', 'Garage', 'Patio', 'Fire Place'],
+                        averageRating: 4.3,
+                        reviewCount: 8
+                    }
+                };
+
+                // Dummy reviews data
+                const dummyReviewsMap: { [key: string]: Review[] } = {
+                    'p1': [
+                        {
+                            reviewId: '1',
+                            userId: '1',
+                            userName: 'John Doe',
+                            propertyId: 'p1',
+                            rating: 5,
+                            comment: 'Great property! The location is perfect and the landlord is very responsive.',
+                            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+                        },
+                        {
+                            reviewId: '3',
+                            userId: '3',
+                            userName: 'Mike Johnson',
+                            propertyId: 'p1',
+                            rating: 4,
+                            comment: 'Good value for money. Would recommend!',
+                            createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString()
+                        }
+                    ],
+                    'p2': [
+                        {
+                            reviewId: '2',
+                            userId: '2',
+                            userName: 'Sarah Smith',
+                            propertyId: 'p2',
+                            rating: 4,
+                            comment: 'Beautiful property but a bit overpriced. Excellent amenities though.',
+                            createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+                        },
+                        {
+                            reviewId: '5',
+                            userId: '5',
+                            userName: 'David Wilson',
+                            propertyId: 'p2',
+                            rating: 3,
+                            comment: 'Nice property but maintenance issues. Hope they fix it soon.',
+                            createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
+                        }
+                    ],
+                    'p3': [
+                        {
+                            reviewId: '4',
+                            userId: '4',
+                            userName: 'Emily Brown',
+                            propertyId: 'p3',
+                            rating: 5,
+                            comment: 'Amazing place! Perfect for families. Very satisfied with the purchase.',
+                            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+                        }
+                    ]
+                };
+
+                const propData = dummyPropertiesMap[id];
+                const reviewsData = dummyReviewsMap[id] || [];
+                
+                if (propData) {
+                    setProperty(propData);
+                    setReviews(reviewsData);
+                } else {
+                    addNotification('Property not found', 'error');
+                }
             } catch (err) {
                 console.error('Failed to load property', err);
                 addNotification('Failed to load property details', 'error');
@@ -269,9 +400,9 @@ export const PropertyDetails: React.FC = () => {
             <Navbar />
             <div className="bg-white">
                 {/* Image Gallery Mock */}
-                <div className="h-[500px] relative bg-gray-200 group">
+                <div className="h-125 relative bg-gray-200 group">
                     <img src={property.images && property.images.length > 0 ? property.images[0].imageUrl : 'https://placehold.co/1200x500?text=No+Image'} className="w-full h-full object-cover" alt="Hero" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent flex items-end">
                         <div className="max-w-7xl mx-auto w-full px-4 pb-8 text-white">
                             <div className="flex gap-2 mb-4">
                                 <span className={`px-3 py-1 rounded-full text-sm font-semibold ${property.status === 'For Sale' ? 'bg-green-500' : 'bg-blue-500'}`}>{property.status}</span>
@@ -350,7 +481,7 @@ export const PropertyDetails: React.FC = () => {
                                             </button>
                                         )}
                                         <div className="flex items-center mb-4">
-                                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mr-3 shadow-md">
+                                            <div className="h-10 w-10 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center mr-3 shadow-md">
                                                 <span className="text-white font-bold">{(r.userName || "U").charAt(0).toUpperCase()}</span>
                                             </div>
                                             <div className="flex-1">
@@ -612,7 +743,7 @@ export const PropertyDetails: React.FC = () => {
             )}
 
             {/* Notification Toasts */}
-            <div className="fixed top-4 right-4 z-[60] space-y-3">
+            <div className="fixed top-4 right-4 z-60 space-y-3">
                 {notifications.map((notification) => (
                     <div
                         key={notification.id}

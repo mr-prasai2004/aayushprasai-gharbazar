@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../../components/Layout';
-import { UserRole } from '../../../types';
+import type { UserRole } from '../../../types';
 import { reviewsApi } from '../../../services/api';
 import { Star, Trash2 } from 'lucide-react';
 
@@ -11,9 +11,60 @@ export const ReviewsFeedback: React.FC = () => {
     useEffect(() => {
         const fetchReviews = async () => {
             try {
-               
-                const data = await reviewsApi.getAll();
-                setReviews(data);
+                // Dummy reviews data
+                const dummyReviews = [
+                    {
+                        reviewId: '1',
+                        userId: '1',
+                        userName: 'John Doe',
+                        propertyId: 'p1',
+                        propertyTitle: 'Cozy Apartment in Downtown',
+                        rating: 5,
+                        comment: 'Great property! The location is perfect and the landlord is very responsive.',
+                        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+                    },
+                    {
+                        reviewId: '2',
+                        userId: '2',
+                        userName: 'Sarah Smith',
+                        propertyId: 'p2',
+                        propertyTitle: 'Luxury Villa with Pool',
+                        rating: 4,
+                        comment: 'Beautiful property but a bit overpriced. Excellent amenities though.',
+                        createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+                    },
+                    {
+                        reviewId: '3',
+                        userId: '3',
+                        userName: 'Mike Johnson',
+                        propertyId: 'p1',
+                        propertyTitle: 'Cozy Apartment in Downtown',
+                        rating: 4,
+                        comment: 'Good value for money. Would recommend!',
+                        createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString()
+                    },
+                    {
+                        reviewId: '4',
+                        userId: '4',
+                        userName: 'Emily Brown',
+                        propertyId: 'p3',
+                        propertyTitle: 'Modern House with Garden',
+                        rating: 5,
+                        comment: 'Amazing place! Perfect for families. Very satisfied with the purchase.',
+                        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+                    },
+                    {
+                        reviewId: '5',
+                        userId: '5',
+                        userName: 'David Wilson',
+                        propertyId: 'p2',
+                        propertyTitle: 'Luxury Villa with Pool',
+                        rating: 3,
+                        comment: 'Nice property but maintenance issues. Hope they fix it soon.',
+                        createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
+                    }
+                ];
+                setReviews(dummyReviews);
             } catch (err) {
                 console.error('Failed to load reviews', err);
                 // Fallback or empty state
@@ -38,7 +89,7 @@ export const ReviewsFeedback: React.FC = () => {
     };
 
     return (
-        <DashboardLayout role={UserRole.ADMIN} title="Reviews & Feedback">
+        <DashboardLayout role="admin" title="Reviews & Feedback">
             {loading ? (
                 <div className="text-center py-12">Loading reviews...</div>
             ) : reviews.length > 0 ? (

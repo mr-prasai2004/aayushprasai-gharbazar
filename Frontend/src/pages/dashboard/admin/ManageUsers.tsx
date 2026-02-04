@@ -28,8 +28,60 @@ export const ManageUsers: React.FC = () => {
     const fetchUsers = async () => {
         try {
             setLoading(true);
-            const data = await usersApi.getAll();
-            setUsers(data);
+            // Dummy users since backend is not running
+            const dummyUsers: UserData[] = [
+                {
+                    userId: '1',
+                    userName: 'john_doe',
+                    email: 'john@example.com',
+                    role: 'buyer',
+                    fullName: 'John Doe',
+                    phoneNumber: '+1-555-0101',
+                    profilePictureUrl: 'https://ui-avatars.com/api/?name=John+Doe',
+                    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    userId: '2',
+                    userName: 'sarah_smith',
+                    email: 'sarah@example.com',
+                    role: 'seller',
+                    fullName: 'Sarah Smith',
+                    phoneNumber: '+1-555-0102',
+                    profilePictureUrl: 'https://ui-avatars.com/api/?name=Sarah+Smith',
+                    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    userId: '3',
+                    userName: 'mike_johnson',
+                    email: 'mike@example.com',
+                    role: 'seller',
+                    fullName: 'Mike Johnson',
+                    phoneNumber: '+1-555-0103',
+                    profilePictureUrl: 'https://ui-avatars.com/api/?name=Mike+Johnson',
+                    createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    userId: '4',
+                    userName: 'emily_brown',
+                    email: 'emily@example.com',
+                    role: 'buyer',
+                    fullName: 'Emily Brown',
+                    phoneNumber: '+1-555-0104',
+                    profilePictureUrl: 'https://ui-avatars.com/api/?name=Emily+Brown',
+                    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    userId: '5',
+                    userName: 'david_wilson',
+                    email: 'david@example.com',
+                    role: 'admin',
+                    fullName: 'David Wilson',
+                    phoneNumber: '+1-555-0105',
+                    profilePictureUrl: 'https://ui-avatars.com/api/?name=David+Wilson',
+                    createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString()
+                }
+            ];
+            setUsers(dummyUsers);
             setError(null);
         } catch (err) {
             console.error('Failed to load users', err);

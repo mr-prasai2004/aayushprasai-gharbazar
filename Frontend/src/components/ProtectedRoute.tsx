@@ -14,11 +14,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
         return <Navigate to="/login" replace />;
     }
 
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Normalize role to uppercase for comparison
+    const userRole = user.role?.toUpperCase();
+    const normalizedAllowedRoles = allowedRoles?.map((role: string) => role.toUpperCase());
+
+    if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(userRole)) {
         // Redirect to their appropriate dashboard if unauthorized
-        if (user.role === 'BUYER') return <Navigate to="/dashboard/buyer" replace />;
-        if (user.role === 'SELLER') return <Navigate to="/dashboard/seller" replace />;
-        if (user.role === 'ADMIN') return <Navigate to="/dashboard/admin" replace />;
+        if (userRole === 'BUYER') return <Navigate to="/dashboard/buyer" replace />;
+        if (userRole === 'SELLER') return <Navigate to="/dashboard/seller" replace />;
+        if (userRole === 'ADMIN') return <Navigate to="/dashboard/admin" replace />;
         return <Navigate to="/" replace />;
     }
 

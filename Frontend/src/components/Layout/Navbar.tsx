@@ -40,7 +40,7 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
-            <Link to="/" className="flex-shrink-0 flex items-center group">
+            <Link to="/" className="shrink-0 flex items-center group">
               <Home className="h-6 w-6 text-primary-600 mr-2 group-hover:scale-110 transition-transform duration-300" />
               <span className="font-bold text-xl text-primary-600 group-hover:text-primary-700 transition-colors duration-300">Ghar Bazar</span>
             </Link>
