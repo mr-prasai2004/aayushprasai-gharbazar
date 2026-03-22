@@ -1,13 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, DollarSign, PlusCircle, FileText } from 'lucide-react';
-import { Navbar } from '../components/Layout/Navbar';
-import { Footer } from '../components/Layout/Footer';
+import { Navbar } from '../components/layout/Navbar';
+import { Footer } from '../components/layout/Footer';
 import { PropertyCard } from '../components/PropertyCard';
 import { propertiesApi } from '../services/api';
 import { useEffect, useState } from 'react';
-import type { Property } from '../types';
-import { PropertyStatus, PropertyType } from '../types';
+import { Property } from '../types';
 
 export const Home: React.FC = () => {
    const navigate = useNavigate();
@@ -17,70 +16,8 @@ export const Home: React.FC = () => {
    useEffect(() => {
       const fetchProperties = async () => {
          try {
-            // Dummy properties data
-            const dummyProperties: Property[] = [
-               {
-                  propertyId: 'p1',
-                  ownerId: 'seller1',
-                  title: 'Cozy Apartment in Downtown',
-                  description: 'Beautiful apartment with modern amenities in the heart of the city.',
-                  propertyType: PropertyType.APARTMENT,
-                  price: 250000,
-                  location: 'Downtown',
-                  city: 'New York',
-                  state: 'NY',
-                  bedrooms: 2,
-                  bathrooms: 1,
-                  areaSqft: 900,
-                  status: PropertyStatus.FOR_SALE,
-                  listedDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-                  images: [{ imageId: '1', propertyId: 'p1', imageUrl: 'https://images.unsplash.com/photo-1560185127-6d4f1c0b98d0?auto=format&fit=crop&w=800&q=80', displayOrder: 1 }],
-                  amenities: ['WiFi', 'AC', 'Gym', 'Pool'],
-                  averageRating: 4.5,
-                  reviewCount: 12
-               },
-               {
-                  propertyId: 'p2',
-                  ownerId: 'seller2',
-                  title: 'Luxury Villa with Pool',
-                  description: 'Stunning luxury villa with private pool and garden.',
-                  propertyType: PropertyType.VILLA,
-                  price: 1200000,
-                  location: 'Beverly Hills',
-                  city: 'Los Angeles',
-                  state: 'CA',
-                  bedrooms: 5,
-                  bathrooms: 4,
-                  areaSqft: 4500,
-                  status: PropertyStatus.FOR_SALE,
-                  listedDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-                  images: [{ imageId: '2', propertyId: 'p2', imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80', displayOrder: 1 }],
-                  amenities: ['Pool', 'Garden', 'Gym', 'Home Theater'],
-                  averageRating: 4.8,
-                  reviewCount: 25
-               },
-               {
-                  propertyId: 'p3',
-                  ownerId: 'seller3',
-                  title: 'Modern House with Garden',
-                  description: 'Contemporary house with spacious garden perfect for families.',
-                  propertyType: PropertyType.HOUSE,
-                  price: 450000,
-                  location: 'Suburbs',
-                  city: 'Chicago',
-                  state: 'IL',
-                  bedrooms: 4,
-                  bathrooms: 2,
-                  areaSqft: 2200,
-                  status: PropertyStatus.FOR_SALE,
-                  listedDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-                  images: [{ imageId: '3', propertyId: 'p3', imageUrl: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80', displayOrder: 1 }],
-                  amenities: ['Garden', 'Garage', 'Patio', 'Fire Place'],
-                  averageRating: 4.3,
-                  reviewCount: 8
-               }
-            ];
-            setProperties(dummyProperties);
+            const data = await propertiesApi.getAll();
+            setProperties(data);
          } catch (err) {
             console.error('Failed to fetch properties', err);
          } finally {
@@ -94,14 +31,14 @@ export const Home: React.FC = () => {
          <Navbar />
 
          {/* Hero Section */}
-         <div className="relative bg-gray-900 h-150 flex items-center justify-center">
+         <div className="relative bg-gray-900 h-[500px] md:h-[600px] flex items-center justify-center">
             <img
                src="https://images.unsplash.com/photo-1600596542815-e32870110029?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
                alt="Modern Home"
                className="absolute inset-0 w-full h-full object-cover opacity-60"
             />
             <div className="relative z-10 max-w-4xl w-full px-4 text-center">
-               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+               <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
                   Find Your Dream Home With Ghar Bazar
                </h1>
                <p className="text-lg text-gray-200 mb-8">
@@ -134,8 +71,8 @@ export const Home: React.FC = () => {
          </div>
 
          {/* Categories */}
-         <div className="max-w-7xl mx-auto px-4 py-20">
-            <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">Explore Property Categories</h2>
+         <div className="max-w-7xl mx-auto px-4 py-10 md:py-20">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12 text-gray-900">Explore Property Categories</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                <div className="bg-white p-8 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
                   <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-6">
@@ -167,9 +104,9 @@ export const Home: React.FC = () => {
          </div>
 
          {/* Featured Properties */}
-         <div className="bg-gray-50 py-20">
+         <div className="bg-gray-50 py-10 md:py-20">
             <div className="max-w-7xl mx-auto px-4">
-               <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">Featured Properties</h2>
+               <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12 text-gray-900">Featured Properties</h2>
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {properties.slice(0, 3).map((prop) => (
                      <PropertyCard key={prop.propertyId} property={prop} />

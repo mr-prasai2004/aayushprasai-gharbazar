@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, X, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Bell, X, CheckCircle, AlertCircle, Clock, Shield } from 'lucide-react';
 import { Notification } from '../types';
 
 interface NotificationCenterProps {
   notifications?: Notification[];
   onMarkAsRead?: (notificationId: string) => void;
+  onMarkAllAsRead?: () => void;
 }
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   notifications = [],
-  onMarkAsRead
+  onMarkAsRead,
+  onMarkAllAsRead
 }) => {
   const [showPanel, setShowPanel] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -31,6 +33,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
         return <AlertCircle className="h-5 w-5 text-red-600" />;
       case 'verification_required':
         return <Clock className="h-5 w-5 text-yellow-600" />;
+      case 'password_changed':
+        return <Shield className="h-5 w-5 text-orange-600" />;
       default:
         return <Bell className="h-5 w-5 text-gray-600" />;
     }
@@ -44,6 +48,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
         return 'border-l-4 border-l-red-500 bg-red-50';
       case 'verification_required':
         return 'border-l-4 border-l-yellow-500 bg-yellow-50';
+      case 'password_changed':
+        return 'border-l-4 border-l-orange-500 bg-orange-50';
       default:
         return 'border-l-4 border-l-blue-500 bg-blue-50';
     }
@@ -67,14 +73,24 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       {/* Notifications Panel */}
       {showPanel && (
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
-          <div className="sticky top-0 bg-gray-50 border-b border-gray-200 p-4 flex justify-between items-center">
+        <div className="sticky top-0 bg-gray-50 border-b border-gray-200 p-4 flex justify-between items-center">
             <h3 className="font-bold text-gray-900">Notifications</h3>
-            <button
-              onClick={() => setShowPanel(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button
+                  onClick={onMarkAllAsRead}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                >
+                  Mark all as read
+                </button>
+              )}
+              <button
+                onClick={() => setShowPanel(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {notifications.length > 0 ? (
@@ -88,7 +104,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   onClick={() => handleMarkAsRead(notification.notificationId)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="shrink-0 mt-0.5">
+                    <div className="flex-shrink-0 mt-0.5">
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1">
@@ -107,7 +123,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                       </p>
                     </div>
                     {!notification.read && (
-                      <div className="shrink-0 w-2 h-2 rounded-full bg-blue-600 mt-1.5" />
+                      <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-600 mt-1.5" />
                     )}
                   </div>
                 </div>

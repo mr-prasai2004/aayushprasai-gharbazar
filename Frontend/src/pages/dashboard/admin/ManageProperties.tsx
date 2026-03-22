@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardLayout } from '../../../components/Layout';
+import { DashboardLayout } from '../../../components/layout';
 import { UserRole } from '../../../types';
 import { propertiesApi } from '../../../services/api';
 import { Trash2, Edit2, X } from 'lucide-react';
@@ -83,7 +83,7 @@ export const AdminManageProperties: React.FC = () => {
                     <h3 className="font-bold text-gray-800">Property Listings Database</h3>
                     <button onClick={loadProperties} className="text-sm text-blue-600 hover:underline">Refresh</button>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 text-gray-500">
                             <tr>
@@ -97,7 +97,7 @@ export const AdminManageProperties: React.FC = () => {
                         <tbody className="divide-y divide-gray-100">
                             {props.map(p => (
                                 <tr key={p.propertyId} className="hover:bg-gray-50 transition">
-                                    <td className="px-6 py-3 font-medium flex items-center gap-3 text-gray-900 min-w-64">
+                                    <td className="px-6 py-3 font-medium flex items-center gap-3 text-gray-900 min-w-[250px]">
                                         <img src={p.images && p.images.length > 0 ? p.images[0].imageUrl : 'https://placehold.co/100x100'} className="w-10 h-10 rounded object-cover" alt={p.title} />
                                         <div>
                                             <p className="font-semibold">{p.title}</p>
@@ -119,10 +119,39 @@ export const AdminManageProperties: React.FC = () => {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-gray-100">
+                    {props.map(p => (
+                        <div key={p.propertyId} className="p-4 space-y-3">
+                            <div className="flex gap-3">
+                                <img src={p.images && p.images.length > 0 ? p.images[0].imageUrl : 'https://placehold.co/100x100'} className="w-16 h-16 rounded object-cover shrink-0" alt={p.title} />
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-gray-900 truncate">{p.title}</p>
+                                    <p className="text-xs text-gray-500 truncate">{p.location}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${p.status === 'For Sale' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            {p.status}
+                                        </span>
+                                        <p className="font-bold text-primary-600 text-sm">${p.price.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => handleEditProperty(p)} className="flex-1 flex items-center justify-center gap-2 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+                                    <Edit2 className="h-3.5 w-3.5" /> Edit
+                                </button>
+                                <button onClick={() => handleDelete(p.propertyId)} className="flex-1 flex items-center justify-center gap-2 py-2 border border-red-100 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition">
+                                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
                     {loading && <p className="text-center py-4 text-gray-500">Loading properties...</p>}
                     {!loading && props.length === 0 && <p className="text-center py-4 text-gray-500">No properties found.</p>}
                 </div>
-            </div>
 
             {/* Edit Property Modal */}
             {showEditModal && editingProperty && editFormData && (

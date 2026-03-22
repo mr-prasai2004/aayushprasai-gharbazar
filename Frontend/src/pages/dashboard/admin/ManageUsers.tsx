@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardLayout } from '../../../components/Layout';
+import { DashboardLayout } from '../../../components/layout';
 import { UserRole } from '../../../types';
 import { Search, Trash2, User, Loader2 } from 'lucide-react';
 import { usersApi } from '../../../services/api';
@@ -28,60 +28,8 @@ export const ManageUsers: React.FC = () => {
     const fetchUsers = async () => {
         try {
             setLoading(true);
-            // Dummy users since backend is not running
-            const dummyUsers: UserData[] = [
-                {
-                    userId: '1',
-                    userName: 'john_doe',
-                    email: 'john@example.com',
-                    role: 'buyer',
-                    fullName: 'John Doe',
-                    phoneNumber: '+1-555-0101',
-                    profilePictureUrl: 'https://ui-avatars.com/api/?name=John+Doe',
-                    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    userId: '2',
-                    userName: 'sarah_smith',
-                    email: 'sarah@example.com',
-                    role: 'seller',
-                    fullName: 'Sarah Smith',
-                    phoneNumber: '+1-555-0102',
-                    profilePictureUrl: 'https://ui-avatars.com/api/?name=Sarah+Smith',
-                    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    userId: '3',
-                    userName: 'mike_johnson',
-                    email: 'mike@example.com',
-                    role: 'seller',
-                    fullName: 'Mike Johnson',
-                    phoneNumber: '+1-555-0103',
-                    profilePictureUrl: 'https://ui-avatars.com/api/?name=Mike+Johnson',
-                    createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    userId: '4',
-                    userName: 'emily_brown',
-                    email: 'emily@example.com',
-                    role: 'buyer',
-                    fullName: 'Emily Brown',
-                    phoneNumber: '+1-555-0104',
-                    profilePictureUrl: 'https://ui-avatars.com/api/?name=Emily+Brown',
-                    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    userId: '5',
-                    userName: 'david_wilson',
-                    email: 'david@example.com',
-                    role: 'admin',
-                    fullName: 'David Wilson',
-                    phoneNumber: '+1-555-0105',
-                    profilePictureUrl: 'https://ui-avatars.com/api/?name=David+Wilson',
-                    createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString()
-                }
-            ];
-            setUsers(dummyUsers);
+            const data = await usersApi.getAll();
+            setUsers(data);
             setError(null);
         } catch (err) {
             console.error('Failed to load users', err);
@@ -162,60 +110,96 @@ export const ManageUsers: React.FC = () => {
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-500">
-                                <tr>
-                                    <th className="px-6 py-3">User</th>
-                                    <th className="px-6 py-3">Email</th>
-                                    <th className="px-6 py-3">Role</th>
-                                    <th className="px-6 py-3">Joined</th>
-                                    <th className="px-6 py-3">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {filteredUsers.map(u => (
-                                    <tr key={u.userId} className="hover:bg-gray-50 transition">
-                                        <td className="px-6 py-3 font-medium">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                                                    {u.profilePictureUrl ? (
-                                                        <img src={u.profilePictureUrl} alt={u.userName} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <span className="text-xs font-bold text-gray-600">
-                                                            {(u.fullName || u.userName).charAt(0).toUpperCase()}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="text-gray-900">{u.fullName || u.userName}</p>
-                                                    <p className="text-xs text-gray-400">@{u.userName}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-3 text-gray-500">{u.email}</td>
-                                        <td className="px-6 py-3">
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeColor(u.role)}`}>
-                                                {u.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-3 text-gray-500">
-                                            {new Date(u.createdAt).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-3">
-                                            <button
-                                                onClick={() => handleDelete(u.userId)}
-                                                className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition"
-                                                title="Delete user"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
-                                        </td>
+                    <>
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-gray-50 text-gray-500">
+                                    <tr>
+                                        <th className="px-6 py-3">User</th>
+                                        <th className="px-6 py-3">Email</th>
+                                        <th className="px-6 py-3">Role</th>
+                                        <th className="px-6 py-3">Joined</th>
+                                        <th className="px-6 py-3">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {filteredUsers.map(u => (
+                                        <tr key={u.userId} className="hover:bg-gray-50 transition">
+                                            <td className="px-6 py-3 font-medium">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                                        {u.profilePictureUrl ? (
+                                                            <img src={u.profilePictureUrl} alt={u.userName} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <span className="text-xs font-bold text-gray-600">
+                                                                {(u.fullName || u.userName).charAt(0).toUpperCase()}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-gray-900">{u.fullName || u.userName}</p>
+                                                        <p className="text-xs text-gray-400">@{u.userName}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-3 text-gray-500">{u.email}</td>
+                                            <td className="px-6 py-3">
+                                                <span className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeColor(u.role)}`}>
+                                                    {u.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-3 text-gray-500">
+                                                {new Date(u.createdAt).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-3">
+                                                <button
+                                                    onClick={() => handleDelete(u.userId)}
+                                                    className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition"
+                                                    title="Delete user"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className="md:hidden divide-y divide-gray-100">
+                            {filteredUsers.map(u => (
+                                <div key={u.userId} className="p-4 flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                                            {u.profilePictureUrl ? (
+                                                <img src={u.profilePictureUrl} alt={u.userName} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-sm font-bold text-gray-600">
+                                                    {(u.fullName || u.userName).charAt(0).toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-gray-900 truncate">{u.fullName || u.userName}</p>
+                                            <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                                            <div className="mt-1">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getRoleBadgeColor(u.role)}`}>
+                                                    {u.role}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDelete(u.userId)}
+                                        className="p-2 text-red-600 bg-red-50 rounded-lg shrink-0"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
         </DashboardLayout>

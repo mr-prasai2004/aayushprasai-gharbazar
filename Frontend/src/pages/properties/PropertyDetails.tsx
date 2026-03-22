@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Navbar } from '../../components/Layout/Navbar';
-import { Footer } from '../../components/Layout/Footer';
-import { propertiesApi, reviewsApi, authApi, messagesApi } from '../../services/api';
+import { Navbar } from '../../components/layout/Navbar';
+import { Footer } from '../../components/layout/Footer';
+import { propertiesApi, reviewsApi, authApi, messagesApi, tourBookingsApi } from '../../services/api';
+import { PropertyMap } from '../../components/map/PropertyMap';
 import { MapPin, Bed, Bath, Move, Star, X, Check, AlertCircle, Trash2 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -37,6 +38,7 @@ export const PropertyDetails: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [notificationId, setNotificationId] = useState(0);
     const [reviews, setReviews] = useState<Review[]>([]);
+    const [sellerBookings, setSellerBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Load property and reviews from API on mount
@@ -45,142 +47,31 @@ export const PropertyDetails: React.FC = () => {
             if (!id) return;
             try {
                 setLoading(true);
-                
-                // Dummy properties data
-                const dummyPropertiesMap: { [key: string]: any } = {
-                    'p1': {
-                        propertyId: 'p1',
-                        ownerId: 'seller1',
-                        title: 'Cozy Apartment in Downtown',
-                        description: 'Beautiful apartment with modern amenities in the heart of the city. Perfect location near shopping centers and restaurants.',
-                        propertyType: 'Apartment',
-                        price: 250000,
-                        location: 'Downtown Manhattan',
-                        city: 'New York',
-                        state: 'NY',
-                        bedrooms: 2,
-                        bathrooms: 1,
-                        areaSqft: 900,
-                        status: 'For Sale',
-                        listedDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-                        images: [
-                            { imageId: '1', propertyId: 'p1', imageUrl: 'https://images.unsplash.com/photo-1560185127-6d4f1c0b98d0?auto=format&fit=crop&w=1200&q=80', displayOrder: 1 },
-                            { imageId: '2', propertyId: 'p1', imageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80', displayOrder: 2 }
-                        ],
-                        amenities: ['WiFi', 'AC', 'Gym', 'Pool', 'Parking'],
-                        averageRating: 4.5,
-                        reviewCount: 12
-                    },
-                    'p2': {
-                        propertyId: 'p2',
-                        ownerId: 'seller2',
-                        title: 'Luxury Villa with Pool',
-                        description: 'Stunning luxury villa with private pool and garden. Spacious living areas with premium finishes.',
-                        propertyType: 'Villa',
-                        price: 1200000,
-                        location: 'Beverly Hills',
-                        city: 'Los Angeles',
-                        state: 'CA',
-                        bedrooms: 5,
-                        bathrooms: 4,
-                        areaSqft: 4500,
-                        status: 'For Sale',
-                        listedDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-                        images: [
-                            { imageId: '3', propertyId: 'p2', imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80', displayOrder: 1 },
-                            { imageId: '4', propertyId: 'p2', imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80', displayOrder: 2 }
-                        ],
-                        amenities: ['Pool', 'Garden', 'Gym', 'Home Theater', 'Security System'],
-                        averageRating: 4.8,
-                        reviewCount: 25
-                    },
-                    'p3': {
-                        propertyId: 'p3',
-                        ownerId: 'seller3',
-                        title: 'Modern House with Garden',
-                        description: 'Contemporary house with spacious garden perfect for families. Recently renovated with modern kitchen.',
-                        propertyType: 'House',
-                        price: 450000,
-                        location: 'Suburbs',
-                        city: 'Chicago',
-                        state: 'IL',
-                        bedrooms: 4,
-                        bathrooms: 2,
-                        areaSqft: 2200,
-                        status: 'For Sale',
-                        listedDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-                        images: [
-                            { imageId: '5', propertyId: 'p3', imageUrl: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80', displayOrder: 1 }
-                        ],
-                        amenities: ['Garden', 'Garage', 'Patio', 'Fire Place'],
-                        averageRating: 4.3,
-                        reviewCount: 8
+                const [propData, reviewsData] = await Promise.all([
+                    propertiesApi.getById(id),
+                    reviewsApi.getByProperty(id).catch(() => []) // Fallback to empty reviews if fails
+                ]);
+                setProperty(propData);
+                setReviews(reviewsData);
+
+                const userStr = localStorage.getItem('currentUser');
+                if (userStr) {
+                    const parsedUser = JSON.parse(userStr);
+                    // The API returns ownerId or OwnerId
+                    const ownerId = propData.ownerId || propData.OwnerId;
+                    const userId = parsedUser.userId || parsedUser.id || parsedUser.UserId;
+                    if (ownerId === userId) {
+                        try {
+                            const bookings = await tourBookingsApi.getSellerBookings();
+                            const propertyBookings = bookings.filter((b: any) => 
+                                (b.propertyId === id || b.PropertyId === id) && 
+                                (b.status !== 'Cancelled' && b.Status !== 'Cancelled')
+                            );
+                            setSellerBookings(propertyBookings);
+                        } catch (err) {
+                            console.error('Failed to fetch seller bookings', err);
+                        }
                     }
-                };
-
-                // Dummy reviews data
-                const dummyReviewsMap: { [key: string]: Review[] } = {
-                    'p1': [
-                        {
-                            reviewId: '1',
-                            userId: '1',
-                            userName: 'John Doe',
-                            propertyId: 'p1',
-                            rating: 5,
-                            comment: 'Great property! The location is perfect and the landlord is very responsive.',
-                            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-                        },
-                        {
-                            reviewId: '3',
-                            userId: '3',
-                            userName: 'Mike Johnson',
-                            propertyId: 'p1',
-                            rating: 4,
-                            comment: 'Good value for money. Would recommend!',
-                            createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString()
-                        }
-                    ],
-                    'p2': [
-                        {
-                            reviewId: '2',
-                            userId: '2',
-                            userName: 'Sarah Smith',
-                            propertyId: 'p2',
-                            rating: 4,
-                            comment: 'Beautiful property but a bit overpriced. Excellent amenities though.',
-                            createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
-                        },
-                        {
-                            reviewId: '5',
-                            userId: '5',
-                            userName: 'David Wilson',
-                            propertyId: 'p2',
-                            rating: 3,
-                            comment: 'Nice property but maintenance issues. Hope they fix it soon.',
-                            createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
-                        }
-                    ],
-                    'p3': [
-                        {
-                            reviewId: '4',
-                            userId: '4',
-                            userName: 'Emily Brown',
-                            propertyId: 'p3',
-                            rating: 5,
-                            comment: 'Amazing place! Perfect for families. Very satisfied with the purchase.',
-                            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-                        }
-                    ]
-                };
-
-                const propData = dummyPropertiesMap[id];
-                const reviewsData = dummyReviewsMap[id] || [];
-                
-                if (propData) {
-                    setProperty(propData);
-                    setReviews(reviewsData);
-                } else {
-                    addNotification('Property not found', 'error');
                 }
             } catch (err) {
                 console.error('Failed to load property', err);
@@ -349,19 +240,31 @@ export const PropertyDetails: React.FC = () => {
         }
     };
 
-    const handleScheduleTour = () => {
+    const handleScheduleTour = async () => {
         if (!isAuthenticated) {
             addNotification('Please log in to schedule a tour', 'error');
             setTimeout(() => navigate('/login'), 500);
             return;
         }
-        if (tourDate && tourTime) {
-            addNotification(`Tour scheduled for ${tourDate} at ${tourTime}`, 'success');
+        if (!tourDate || !tourTime) {
+            addNotification('Please select both date and time', 'error');
+            return;
+        }
+        if (!property) return;
+
+        try {
+            await tourBookingsApi.schedule({
+                propertyId: property.propertyId,
+                tourDate,
+                tourTime,
+            });
+            addNotification(`Tour scheduled for ${new Date(tourDate).toLocaleDateString()} at ${tourTime}! Check "My Bookings" to manage it.`, 'success');
             setTourDate('');
             setTourTime('');
             setShowTourModal(false);
-        } else {
-            addNotification('Please select both date and time', 'error');
+        } catch (error: any) {
+            console.error('Failed to schedule tour', error);
+            addNotification(error?.message || 'Failed to schedule tour. Please try again.', 'error');
         }
     };
 
@@ -400,16 +303,16 @@ export const PropertyDetails: React.FC = () => {
             <Navbar />
             <div className="bg-white">
                 {/* Image Gallery Mock */}
-                <div className="h-125 relative bg-gray-200 group">
+                <div className="h-[350px] md:h-[500px] relative bg-gray-200 group">
                     <img src={property.images && property.images.length > 0 ? property.images[0].imageUrl : 'https://placehold.co/1200x500?text=No+Image'} className="w-full h-full object-cover" alt="Hero" />
-                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent flex items-end">
-                        <div className="max-w-7xl mx-auto w-full px-4 pb-8 text-white">
-                            <div className="flex gap-2 mb-4">
-                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${property.status === 'For Sale' ? 'bg-green-500' : 'bg-blue-500'}`}>{property.status}</span>
-                                <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white/20 backdrop-blur-sm">{property.propertyType}</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
+                        <div className="max-w-7xl mx-auto w-full px-4 md:px-6 pb-6 md:pb-8 text-white">
+                            <div className="flex gap-2 mb-3 md:mb-4">
+                                <span className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${property.status === 'For Sale' ? 'bg-green-500' : 'bg-blue-500'}`}>{property.status}</span>
+                                <span className="px-3 py-1 rounded-full text-xs md:text-sm font-semibold bg-white/20 backdrop-blur-sm">{property.propertyType}</span>
                             </div>
-                            <h1 className="text-4xl font-bold mb-2">{property.title}</h1>
-                            <p className="text-3xl font-bold text-primary-300 mb-4">${property.price.toLocaleString()}</p>
+                            <h1 className="text-2xl md:text-4xl font-bold mb-1 md:mb-2">{property.title}</h1>
+                            <p className="text-xl md:text-3xl font-bold text-primary-300 mb-3 md:mb-4">${property.price.toLocaleString()}</p>
                             <div className="flex items-center text-gray-200">
                                 <MapPin className="h-5 w-5 mr-2" /> {property.location}
                             </div>
@@ -417,8 +320,8 @@ export const PropertyDetails: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <div className="lg:col-span-2 space-y-12">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-12 grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
+                    <div className="lg:col-span-2 space-y-8 md:space-y-12">
                         {/* Description */}
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">Property Details</h2>
@@ -436,16 +339,14 @@ export const PropertyDetails: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Location Mock */}
+                        {/* Location Map */}
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">Location</h2>
-                            <div className="h-80 bg-gray-200 rounded-xl overflow-hidden relative flex items-center justify-center border border-gray-300">
-                                <div className="text-center">
-                                    <MapPin className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                                    <p className="text-gray-500 font-medium">Map Integration Placeholder</p>
-                                    <p className="text-sm text-gray-400 mt-1">{property.location}</p>
-                                </div>
-                            </div>
+                            <PropertyMap 
+                                latitude={property.latitude} 
+                                longitude={property.longitude} 
+                                locationText={property.location} 
+                            />
                         </div>
 
                         {/* Reviews */}
@@ -481,7 +382,7 @@ export const PropertyDetails: React.FC = () => {
                                             </button>
                                         )}
                                         <div className="flex items-center mb-4">
-                                            <div className="h-10 w-10 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center mr-3 shadow-md">
+                                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mr-3 shadow-md">
                                                 <span className="text-white font-bold">{(r.userName || "U").charAt(0).toUpperCase()}</span>
                                             </div>
                                             <div className="flex-1">
@@ -542,6 +443,27 @@ export const PropertyDetails: React.FC = () => {
                                             Delete Property
                                         </button>
                                     </div>
+
+                                    {sellerBookings.length > 0 && (
+                                        <div className="mt-8 border-t border-gray-200 pt-6">
+                                            <h4 className="font-bold text-gray-900 mb-4">Scheduled Tours</h4>
+                                            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                                {sellerBookings.map((booking: any) => (
+                                                    <div key={booking.bookingId || booking.BookingId} className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <span className="font-medium text-sm text-blue-900">
+                                                                {new Date(booking.tourDate || booking.TourDate).toLocaleDateString()} at {booking.tourTime || booking.TourTime}
+                                                            </span>
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full ${['Confirmed', 'confirmed'].includes(booking.status || booking.Status) ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                                {booking.status || booking.Status}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-blue-800">Buyer: <span className="font-medium">{booking.buyerName || booking.BuyerName || 'User'}</span></p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </>
                             )}
 
@@ -743,7 +665,7 @@ export const PropertyDetails: React.FC = () => {
             )}
 
             {/* Notification Toasts */}
-            <div className="fixed top-4 right-4 z-60 space-y-3">
+            <div className="fixed top-4 right-4 z-[60] space-y-3">
                 {notifications.map((notification) => (
                     <div
                         key={notification.id}

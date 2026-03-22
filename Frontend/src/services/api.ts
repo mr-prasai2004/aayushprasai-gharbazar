@@ -1,5 +1,5 @@
 // API Service for Ghar Bazar
-// Centralizes all API calls to the backend
+
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -38,7 +38,13 @@ const apiRequest = async <T>(
     return null as unknown as T;
   }
 
-  return response.json();
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) : (null as unknown as T);
+  } catch (error) {
+    // If it's not valid JSON but the response was ok, just return the text or null
+    return (text as unknown as T) || (null as unknown as T);
+  }
 };
 
 // Properties API
@@ -197,15 +203,48 @@ export const wishlistApi = {
   },
 
   add: async (propertyId: string) => {
-    return apiRequest<any>('/wishlist', {
+    return apiRequest<any>(`/wishlist/${propertyId}`, {
       method: 'POST',
-      body: JSON.stringify({ propertyId }),
     });
   },
 
   remove: async (propertyId: string) => {
     return apiRequest<void>(`/wishlist/${propertyId}`, {
       method: 'DELETE',
+    });
+  },
+
+  isInWishlist: async (propertyId: string): Promise<boolean> => {
+    try {
+      const all = await apiRequest<any[]>('/wishlist');
+      if (!Array.isArray(all)) return false;
+      return all.some((p: any) => p.propertyId === propertyId || p.PropertyId === propertyId);
+    } catch {
+      return false;
+    }
+  },
+};
+
+// Tour Bookings API
+export const tourBookingsApi = {
+  getMyBookings: async () => {
+    return apiRequest<any[]>('/tourbookings');
+  },
+
+  getSellerBookings: async () => {
+    return apiRequest<any[]>('/tourbookings/seller');
+  },
+
+  schedule: async (data: { propertyId: string; tourDate: string; tourTime: string; notes?: string }) => {
+    return apiRequest<any>('/tourbookings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  cancel: async (bookingId: string) => {
+    return apiRequest<any>(`/tourbookings/${bookingId}/cancel`, {
+      method: 'PUT',
     });
   },
 };
@@ -222,6 +261,12 @@ export const notificationsApi = {
 
   markAsRead: async (id: string) => {
     return apiRequest<any>(`/notifications/${id}/read`, {
+      method: 'PUT',
+    });
+  },
+
+  markAllAsRead: async () => {
+    return apiRequest<any>('/notifications/read-all', {
       method: 'PUT',
     });
   },
@@ -268,7 +313,9 @@ export const uploadApi = {
       throw new Error(errorData.message || 'Failed to upload image');
     }
 
-    return response.json();
+    const data = await response.json();
+    // Normalize PascalCase from C# backend: { Url, FileName } → { url, fileName }
+    return { url: data.Url || data.url || '', fileName: data.FileName || data.fileName || '' };
   },
 
   // Upload multiple images (for properties)
@@ -288,7 +335,9 @@ export const uploadApi = {
       throw new Error(errorData.message || 'Failed to upload images');
     }
 
-    return response.json();
+    const data = await response.json();
+    // Normalize PascalCase from C# backend
+    return data.map((item: any) => ({ url: item.Url || item.url || '', fileName: item.FileName || item.fileName || '' }));
   },
 
   // Upload document
@@ -308,14 +357,16 @@ export const uploadApi = {
       throw new Error(errorData.message || 'Failed to upload document');
     }
 
-    return response.json();
+    const data = await response.json();
+    // Normalize PascalCase from C# backend: { Url, FileName } → { url, fileName }
+    return { url: data.Url || data.url || '', fileName: data.FileName || data.fileName || '' };
   },
 
   // Get full URL for uploaded file
   getFileUrl: (path: string): string => {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     // Remove /api from the baseUrl to get the root domain
     const rootUrl = baseUrl.replace('/api', '');
     return `${rootUrl}${path}`;

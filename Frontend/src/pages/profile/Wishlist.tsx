@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
-import { UserRole } from '../../types';
+import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { PropertyCard } from '../../components/PropertyCard';
-
+import { UserRole } from '../../types';
 
 export const Wishlist: React.FC = () => {
     const [wishlistProperties, setWishlistProperties] = useState<any[]>([]);
@@ -43,7 +42,7 @@ export const Wishlist: React.FC = () => {
         <DashboardLayout role={role} title="My Wishlist">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {wishlistProperties.length > 0 ? (
-                    wishlistProperties.map(p => <PropertyCard key={p.property_id} property={p} />)
+                    wishlistProperties.map(p => <PropertyCard key={p.propertyId} property={p} />)
                 ) : (
                     <div className="col-span-full text-center py-12">
                         <p className="text-gray-500 text-lg">No properties in your wishlist yet.</p>

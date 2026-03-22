@@ -8,8 +8,7 @@ export const SavedListings: React.FC = () => {
   useEffect(() => {
     const fetchWishlist = async () => {
       try {
-        // Ideally use wishlistApi.getAll() but for demo/stability using general properties
-        // or we can try fetching wishlist
+       
         const data = await wishlistApi.getAll().catch(() => []);
         if (data.length > 0) {
           setProperties(data);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Navbar } from '../../components/Layout/Navbar';
-import { Footer } from '../../components/Layout/Footer';
+import { Navbar } from '../../components/layout/Navbar';
+import { Footer } from '../../components/layout/Footer';
 import { PropertyCard } from '../../components/PropertyCard';
 import { propertiesApi } from '../../services/api';
 import { Search, Grid, List as ListIcon } from 'lucide-react';
@@ -23,110 +23,8 @@ export const PropertySearch: React.FC = () => {
         const fetchProperties = async () => {
             try {
                 setLoading(true);
-                // Dummy properties data
-                const dummyProperties = [
-                    {
-                        propertyId: 'p1',
-                        ownerId: 'seller1',
-                        title: 'Cozy Apartment in Downtown',
-                        description: 'Beautiful apartment with modern amenities in the heart of the city.',
-                        propertyType: 'Apartment',
-                        price: 250000,
-                        location: 'Downtown',
-                        city: 'New York',
-                        state: 'NY',
-                        bedrooms: 2,
-                        bathrooms: 1,
-                        areaSqft: 900,
-                        status: 'For Sale',
-                        listedDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-                        images: [{ imageId: '1', propertyId: 'p1', imageUrl: 'https://images.unsplash.com/photo-1560185127-6d4f1c0b98d0?auto=format&fit=crop&w=800&q=80', displayOrder: 1 }],
-                        amenities: ['WiFi', 'AC', 'Gym', 'Pool'],
-                        averageRating: 4.5,
-                        reviewCount: 12
-                    },
-                    {
-                        propertyId: 'p2',
-                        ownerId: 'seller2',
-                        title: 'Luxury Villa with Pool',
-                        description: 'Stunning luxury villa with private pool and garden.',
-                        propertyType: 'Villa',
-                        price: 1200000,
-                        location: 'Beverly Hills',
-                        city: 'Los Angeles',
-                        state: 'CA',
-                        bedrooms: 5,
-                        bathrooms: 4,
-                        areaSqft: 4500,
-                        status: 'For Sale',
-                        listedDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-                        images: [{ imageId: '2', propertyId: 'p2', imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80', displayOrder: 1 }],
-                        amenities: ['Pool', 'Garden', 'Gym', 'Home Theater'],
-                        averageRating: 4.8,
-                        reviewCount: 25
-                    },
-                    {
-                        propertyId: 'p3',
-                        ownerId: 'seller3',
-                        title: 'Modern House with Garden',
-                        description: 'Contemporary house with spacious garden perfect for families.',
-                        propertyType: 'House',
-                        price: 450000,
-                        location: 'Suburbs',
-                        city: 'Chicago',
-                        state: 'IL',
-                        bedrooms: 4,
-                        bathrooms: 2,
-                        areaSqft: 2200,
-                        status: 'For Sale',
-                        listedDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-                        images: [{ imageId: '3', propertyId: 'p3', imageUrl: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80', displayOrder: 1 }],
-                        amenities: ['Garden', 'Garage', 'Patio', 'Fire Place'],
-                        averageRating: 4.3,
-                        reviewCount: 8
-                    },
-                    {
-                        propertyId: 'p4',
-                        ownerId: 'seller4',
-                        title: 'Spacious Office Space',
-                        description: 'Prime office space in business district with modern facilities.',
-                        propertyType: 'Commercial',
-                        price: 800000,
-                        location: 'Business District',
-                        city: 'San Francisco',
-                        state: 'CA',
-                        bedrooms: 0,
-                        bathrooms: 3,
-                        areaSqft: 3000,
-                        status: 'For Rent',
-                        listedDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-                        images: [{ imageId: '4', propertyId: 'p4', imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80', displayOrder: 1 }],
-                        amenities: ['Parking', 'WiFi', 'Meeting Rooms', 'Break Room'],
-                        averageRating: 4.6,
-                        reviewCount: 18
-                    },
-                    {
-                        propertyId: 'p5',
-                        ownerId: 'seller1',
-                        title: 'Elegant Condo with City View',
-                        description: 'Premium condo with breathtaking city skyline views.',
-                        propertyType: 'Condo',
-                        price: 650000,
-                        location: 'Downtown',
-                        city: 'Boston',
-                        state: 'MA',
-                        bedrooms: 3,
-                        bathrooms: 2,
-                        areaSqft: 1800,
-                        status: 'For Sale',
-                        listedDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-                        images: [{ imageId: '5', propertyId: 'p5', imageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80', displayOrder: 1 }],
-                        amenities: ['Balcony', 'Gym', 'Concierge', 'Valet Parking'],
-                        averageRating: 4.7,
-                        reviewCount: 15
-                    }
-                ];
-                setProperties(dummyProperties);
+                const data = await propertiesApi.getAll();
+                setProperties(data);
             } catch (err) {
                 console.error('Failed to load properties', err);
             } finally {
@@ -185,9 +83,9 @@ export const PropertySearch: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
-            <div className="bg-white py-12 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 text-center">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Your Next Dream Property</h1>
+            <div className="bg-white py-8 md:py-12 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">Find Your Next Dream Property</h1>
                     <div className="max-w-3xl mx-auto flex gap-2">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-3.5 text-gray-400 h-5 w-5" />
@@ -204,10 +102,10 @@ export const PropertySearch: React.FC = () => {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6">
                 {/* Filters */}
-                <div className="flex flex-wrap gap-4 mb-8 items-center justify-between">
-                    <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex flex-col md:flex-row flex-wrap gap-4 mb-6 md:mb-8 items-start md:items-center justify-between">
+                    <div className="flex flex-nowrap overflow-x-auto pb-2 md:pb-0 md:flex-wrap w-full md:w-auto gap-3 items-center snap-x hide-scrollbar">
                         {/* Property Type */}
                         <div className="relative">
                             <select
@@ -259,8 +157,8 @@ export const PropertySearch: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* View Toggle */}
-                    <div className="flex items-center gap-2">
+                    {/* View Toggle - Hidden on mobile for simplicity */}
+                    <div className="hidden md:flex items-center gap-2">
                         <button className="p-2 bg-primary-500 text-white rounded shadow-sm"><Grid className="h-5 w-5" /></button>
                         <button className="p-2 bg-white text-gray-500 border border-gray-300 rounded hover:bg-gray-50"><ListIcon className="h-5 w-5" /></button>
                     </div>

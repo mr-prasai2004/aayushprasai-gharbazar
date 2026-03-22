@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
+import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { UserRole } from '../../types';
 import { authApi, uploadApi } from '../../services/api';
 import { Camera, Edit2, Save, Loader2 } from 'lucide-react';
@@ -108,8 +108,8 @@ export const Profile: React.FC = () => {
 
     return (
         <DashboardLayout role={role} title="Profile Information">
-            <div className="bg-white p-8 rounded-lg border border-gray-200 shadow-sm mb-8">
-                <div className="flex justify-between items-start mb-6">
+            <div className="bg-white p-4 md:p-8 rounded-lg border border-gray-200 shadow-sm mb-6 md:mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <h2 className="text-xl font-bold text-gray-800">Personal Details</h2>
                     <button
                         onClick={() => isEditing ? handleSave() : setIsEditing(true)}
@@ -142,7 +142,7 @@ export const Profile: React.FC = () => {
                     </div>
 
                     {/* Form Fields */}
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-6 md:gap-x-12">
                         <div>
                             <p className="text-xs uppercase text-gray-500 font-semibold mb-1">Full Name</p>
                             {isEditing ?
@@ -175,8 +175,8 @@ export const Profile: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white p-8 rounded-lg border border-gray-200 shadow-sm mb-8">
-                <h2 className="text-xl font-bold text-gray-800 mb-6">Contact Preferences</h2>
+            <div className="bg-white p-4 md:p-8 rounded-lg border border-gray-200 shadow-sm mb-8">
+                <h2 className="text-xl font-bold text-gray-800 mb-4 md:mb-6">Contact Preferences</h2>
                 <div className="space-y-3">
                     <label className="flex items-center"><input type="checkbox" defaultChecked className="text-primary-600 rounded mr-2" disabled={!isEditing} /> Email</label>
                     <label className="flex items-center"><input type="checkbox" defaultChecked className="text-primary-600 rounded mr-2" disabled={!isEditing} /> Phone</label>
