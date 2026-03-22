@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GharBazar.API", "GharBazar.API\GharBazar.API.csproj", "{8117AF58-70D9-2014-BA1C-7AEF9E2C8B3E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8117AF58-70D9-2014-BA1C-7AEF9E2C8B3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8117AF58-70D9-2014-BA1C-7AEF9E2C8B3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8117AF58-70D9-2014-BA1C-7AEF9E2C8B3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8117AF58-70D9-2014-BA1C-7AEF9E2C8B3E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AC92566E-E693-4F0A-BE77-926E3C964C29}
+	EndGlobalSection
+EndGlobal

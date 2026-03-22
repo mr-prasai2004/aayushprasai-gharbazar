@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardLayout } from '../../../components/Layout';
+import { DashboardLayout } from '../../../components/layout';
 import { UserRole } from '../../../types';
 import { reviewsApi } from '../../../services/api';
 import { Star, Trash2 } from 'lucide-react';
@@ -11,7 +11,8 @@ export const ReviewsFeedback: React.FC = () => {
     useEffect(() => {
         const fetchReviews = async () => {
             try {
-               
+                // Assuming backend now has getAll endpoint for admins
+                // If not, we might need to change this logic or wait for backend update
                 const data = await reviewsApi.getAll();
                 setReviews(data);
             } catch (err) {
@@ -57,7 +58,7 @@ export const ReviewsFeedback: React.FC = () => {
                                 </div>
                                 <button
                                     onClick={() => handleDelete(r.reviewId)}
-                                    className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition duration-200">
+                                    className="text-gray-300 hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition duration-200">
                                     <Trash2 className="h-4 w-4" />
                                 </button>
                             </div>

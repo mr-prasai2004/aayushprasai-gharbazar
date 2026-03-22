@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Navbar } from '../../components/Layout/Navbar';
-import { Footer } from '../../components/Layout/Footer';
-import { propertiesApi, reviewsApi, authApi, messagesApi } from '../../services/api';
+import { Navbar } from '../../components/layout/Navbar';
+import { Footer } from '../../components/layout/Footer';
+import { propertiesApi, reviewsApi, authApi, messagesApi, tourBookingsApi } from '../../services/api';
+import { PropertyMap } from '../../components/map/PropertyMap';
 import { MapPin, Bed, Bath, Move, Star, X, Check, AlertCircle, Trash2 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -37,6 +38,7 @@ export const PropertyDetails: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [notificationId, setNotificationId] = useState(0);
     const [reviews, setReviews] = useState<Review[]>([]);
+    const [sellerBookings, setSellerBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Load property and reviews from API on mount
@@ -51,6 +53,26 @@ export const PropertyDetails: React.FC = () => {
                 ]);
                 setProperty(propData);
                 setReviews(reviewsData);
+
+                const userStr = localStorage.getItem('currentUser');
+                if (userStr) {
+                    const parsedUser = JSON.parse(userStr);
+                    // The API returns ownerId or OwnerId
+                    const ownerId = propData.ownerId || propData.OwnerId;
+                    const userId = parsedUser.userId || parsedUser.id || parsedUser.UserId;
+                    if (ownerId === userId) {
+                        try {
+                            const bookings = await tourBookingsApi.getSellerBookings();
+                            const propertyBookings = bookings.filter((b: any) => 
+                                (b.propertyId === id || b.PropertyId === id) && 
+                                (b.status !== 'Cancelled' && b.Status !== 'Cancelled')
+                            );
+                            setSellerBookings(propertyBookings);
+                        } catch (err) {
+                            console.error('Failed to fetch seller bookings', err);
+                        }
+                    }
+                }
             } catch (err) {
                 console.error('Failed to load property', err);
                 addNotification('Failed to load property details', 'error');
@@ -218,19 +240,31 @@ export const PropertyDetails: React.FC = () => {
         }
     };
 
-    const handleScheduleTour = () => {
+    const handleScheduleTour = async () => {
         if (!isAuthenticated) {
             addNotification('Please log in to schedule a tour', 'error');
             setTimeout(() => navigate('/login'), 500);
             return;
         }
-        if (tourDate && tourTime) {
-            addNotification(`Tour scheduled for ${tourDate} at ${tourTime}`, 'success');
+        if (!tourDate || !tourTime) {
+            addNotification('Please select both date and time', 'error');
+            return;
+        }
+        if (!property) return;
+
+        try {
+            await tourBookingsApi.schedule({
+                propertyId: property.propertyId,
+                tourDate,
+                tourTime,
+            });
+            addNotification(`Tour scheduled for ${new Date(tourDate).toLocaleDateString()} at ${tourTime}! Check "My Bookings" to manage it.`, 'success');
             setTourDate('');
             setTourTime('');
             setShowTourModal(false);
-        } else {
-            addNotification('Please select both date and time', 'error');
+        } catch (error: any) {
+            console.error('Failed to schedule tour', error);
+            addNotification(error?.message || 'Failed to schedule tour. Please try again.', 'error');
         }
     };
 
@@ -269,16 +303,16 @@ export const PropertyDetails: React.FC = () => {
             <Navbar />
             <div className="bg-white">
                 {/* Image Gallery Mock */}
-                <div className="h-[500px] relative bg-gray-200 group">
+                <div className="h-[350px] md:h-[500px] relative bg-gray-200 group">
                     <img src={property.images && property.images.length > 0 ? property.images[0].imageUrl : 'https://placehold.co/1200x500?text=No+Image'} className="w-full h-full object-cover" alt="Hero" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
-                        <div className="max-w-7xl mx-auto w-full px-4 pb-8 text-white">
-                            <div className="flex gap-2 mb-4">
-                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${property.status === 'For Sale' ? 'bg-green-500' : 'bg-blue-500'}`}>{property.status}</span>
-                                <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white/20 backdrop-blur-sm">{property.propertyType}</span>
+                        <div className="max-w-7xl mx-auto w-full px-4 md:px-6 pb-6 md:pb-8 text-white">
+                            <div className="flex gap-2 mb-3 md:mb-4">
+                                <span className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${property.status === 'For Sale' ? 'bg-green-500' : 'bg-blue-500'}`}>{property.status}</span>
+                                <span className="px-3 py-1 rounded-full text-xs md:text-sm font-semibold bg-white/20 backdrop-blur-sm">{property.propertyType}</span>
                             </div>
-                            <h1 className="text-4xl font-bold mb-2">{property.title}</h1>
-                            <p className="text-3xl font-bold text-primary-300 mb-4">${property.price.toLocaleString()}</p>
+                            <h1 className="text-2xl md:text-4xl font-bold mb-1 md:mb-2">{property.title}</h1>
+                            <p className="text-xl md:text-3xl font-bold text-primary-300 mb-3 md:mb-4">${property.price.toLocaleString()}</p>
                             <div className="flex items-center text-gray-200">
                                 <MapPin className="h-5 w-5 mr-2" /> {property.location}
                             </div>
@@ -286,8 +320,8 @@ export const PropertyDetails: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <div className="lg:col-span-2 space-y-12">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-12 grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
+                    <div className="lg:col-span-2 space-y-8 md:space-y-12">
                         {/* Description */}
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">Property Details</h2>
@@ -305,16 +339,14 @@ export const PropertyDetails: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Location Mock */}
+                        {/* Location Map */}
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">Location</h2>
-                            <div className="h-80 bg-gray-200 rounded-xl overflow-hidden relative flex items-center justify-center border border-gray-300">
-                                <div className="text-center">
-                                    <MapPin className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                                    <p className="text-gray-500 font-medium">Map Integration Placeholder</p>
-                                    <p className="text-sm text-gray-400 mt-1">{property.location}</p>
-                                </div>
-                            </div>
+                            <PropertyMap 
+                                latitude={property.latitude} 
+                                longitude={property.longitude} 
+                                locationText={property.location} 
+                            />
                         </div>
 
                         {/* Reviews */}
@@ -411,6 +443,27 @@ export const PropertyDetails: React.FC = () => {
                                             Delete Property
                                         </button>
                                     </div>
+
+                                    {sellerBookings.length > 0 && (
+                                        <div className="mt-8 border-t border-gray-200 pt-6">
+                                            <h4 className="font-bold text-gray-900 mb-4">Scheduled Tours</h4>
+                                            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                                {sellerBookings.map((booking: any) => (
+                                                    <div key={booking.bookingId || booking.BookingId} className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <span className="font-medium text-sm text-blue-900">
+                                                                {new Date(booking.tourDate || booking.TourDate).toLocaleDateString()} at {booking.tourTime || booking.TourTime}
+                                                            </span>
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full ${['Confirmed', 'confirmed'].includes(booking.status || booking.Status) ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                                {booking.status || booking.Status}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-blue-800">Buyer: <span className="font-medium">{booking.buyerName || booking.BuyerName || 'User'}</span></p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </>
                             )}
 

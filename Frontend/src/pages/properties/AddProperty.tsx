@@ -1,14 +1,39 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
+import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { UserRole } from '../../types';
-import { Upload, X, CheckCircle, Loader2 } from 'lucide-react';
+import { Upload, X, CheckCircle, Loader2, FileText, AlertCircle } from 'lucide-react';
 import { propertiesApi, uploadApi } from '../../services/api';
+import { MapPicker } from '../../components/map/MapPicker';
+
+const DOCUMENT_TYPES = [
+    'Lalpurja (Land Ownership Certificate)',
+    'Naapi Naksha (Land Survey Map)',
+    'Char Killa Praman Patra (Four Boundary Certificate)',
+    'Malpot Receipt (Land Tax Receipt)',
+    'Naamsar (Transfer of Ownership)',
+    'Building Permit',
+    'Completion Certificate',
+    'House Number Certificate',
+    'NOC (No Objection Certificate)',
+    'Naagarikta (Citizenship)',
+    'Other'
+];
+
+interface UploadedDoc {
+    document_type: string;
+    document_name: string;
+    document_url: string;
+}
 
 export const AddProperty: React.FC = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [uploading, setUploading] = useState(false);
+    const [docUploading, setDocUploading] = useState(false);
+    const [selectedDocType, setSelectedDocType] = useState('');
+    const [selectedDocFile, setSelectedDocFile] = useState<File | null>(null);
+    const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>([]);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -24,10 +49,12 @@ export const AddProperty: React.FC = () => {
         parking: 'Yes',
         yearBuilt: '',
         amenities: [] as string[],
-        images: [] as string[]
+        images: [] as string[],
+        latitude: null as number | null,
+        longitude: null as number | null
     });
 
-    const totalSteps = 5;
+    const totalSteps = 6;
     const progress = (step / totalSteps) * 100;
 
     const handleNext = (e: React.FormEvent) => {
@@ -42,18 +69,10 @@ export const AddProperty: React.FC = () => {
     };
 
     const handleSubmit = async () => {
-        // Build new property object and save to API
-        // Note: IDs and dates are handled by the backend
-
-        // Convert images to documents structure matching backend expectation if needed, 
-        // or just send as images. The original code created documents from images? 
-        // We will send both if the backend model supports it, or just images.
-        // Based on typical patterns, we send property data.
-
-        const documents = (formData.images || []).map((img: string, idx: number) => ({
-            documentType: 'property_photo',
-            documentUrl: img,
-            documentName: `Property Photo ${idx + 1}`,
+        const documents = uploadedDocs.map(doc => ({
+            documentType: doc.document_type,
+            documentUrl: doc.document_url,
+            documentName: doc.document_name,
             verified: false
         }));
 
@@ -74,6 +93,8 @@ export const AddProperty: React.FC = () => {
             bathrooms: Number(formData.bathrooms) || 0,
             areaSqft: Number(formData.area) || 0,
             status: 'Pending',
+            latitude: formData.latitude,
+            longitude: formData.longitude,
             amenities: formData.amenities || [],
             documents: documents,
             images: images,
@@ -88,6 +109,40 @@ export const AddProperty: React.FC = () => {
             console.error('Failed to save property', err);
             alert('Failed to save property. Please try again.');
         }
+    };
+
+    const handleDocFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setSelectedDocFile(e.target.files[0]);
+        }
+    };
+
+    const handleDocUpload = async () => {
+        if (!selectedDocType || !selectedDocFile) {
+            alert('Please select a document type and file');
+            return;
+        }
+        try {
+            setDocUploading(true);
+            const result = await uploadApi.uploadDocument(selectedDocFile);
+            const fileUrl = uploadApi.getFileUrl(result.url);
+            setUploadedDocs(prev => [...prev, {
+                document_type: selectedDocType,
+                document_name: selectedDocFile.name,
+                document_url: fileUrl
+            }]);
+            setSelectedDocType('');
+            setSelectedDocFile(null);
+        } catch (err) {
+            console.error('Failed to upload document', err);
+            alert('Failed to upload document. Please try again.');
+        } finally {
+            setDocUploading(false);
+        }
+    };
+
+    const handleRemoveDoc = (idx: number) => {
+        setUploadedDocs(prev => prev.filter((_, i) => i !== idx));
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -144,6 +199,8 @@ export const AddProperty: React.FC = () => {
         e.target.value = '';
     };
 
+    const stepLabels = ['Basic Info', 'Details', 'Photos', 'Documents', 'Amenities', 'Review'];
+
     const renderStep = () => {
         switch (step) {
             case 1:
@@ -158,38 +215,50 @@ export const AddProperty: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
                             <input name="address" value={formData.address} onChange={handleInputChange} type="text" className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Street, City, State, Zip" required />
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Pin Location on Map</label>
+                            <p className="text-xs text-gray-500 mb-2">Click on the map to accurately place your property.</p>
+                            <MapPicker 
+                                initialLatitude={formData.latitude}
+                                initialLongitude={formData.longitude}
+                                onLocationSelect={(lat, lng) => setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))}
+                            />
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
                                 <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none">
-                                    <option>House</option>
-                                    <option>Apartment</option>
-                                    <option>Condo</option>
-                                    <option>Villa</option>
-                                    <option>Land</option>
-                                    <option>Commercial</option>
+                                    <option>House / Ghar</option>
+                                    <option>Apartment / Flat</option>
+                                    <option>Land / Jagga</option>
+                                    <option>Residential Plot</option>
+                                    <option>Agricultural Land</option>
+                                    <option>Commercial Space</option>
+                                    <option>Office Space</option>
+                                    <option>Villa / Bungalow</option>
+                                    <option>Warehouse / Godam</option>
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Listing Type</label>
                                 <select name="listingType" value={formData.listingType} onChange={handleInputChange} className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none">
-                                    <option>For Sale</option>
-                                    <option>For Rent</option>
+                                    <option>For Sale (Bechna)</option>
+                                    <option>For Rent (Bhaada)</option>
                                     <option>Lease</option>
                                 </select>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Price (USD)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Price (NPR)</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-2 text-gray-500">$</span>
-                                    <input name="price" value={formData.price} onChange={handleInputChange} type="number" className="w-full border border-gray-300 rounded-md pl-8 pr-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="500000" required />
+                                    <span className="absolute left-3 top-2 text-gray-500 text-sm font-medium">NPR</span>
+                                    <input name="price" value={formData.price} onChange={handleInputChange} type="number" className="w-full border border-gray-300 rounded-md pl-14 pr-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="50,00,000" required />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Area (Sq Ft)</label>
-                                <input name="area" value={formData.area} onChange={handleInputChange} type="number" className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="2000" required />
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Area (Sq. Ft. / Ropani-Ana)</label>
+                                <input name="area" value={formData.area} onChange={handleInputChange} type="number" className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. 1200" required />
                             </div>
                         </div>
                         <div>
@@ -284,6 +353,88 @@ export const AddProperty: React.FC = () => {
             case 4:
                 return (
                     <div className="space-y-6">
+                        <h4 className="text-xl font-bold text-gray-800">Property Documents</h4>
+                        <p className="text-sm text-gray-500">Upload legal documents for verification. At least one document is required (e.g., Title Deed).</p>
+
+                        {/* Upload area */}
+                        <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Document Type *</label>
+                                <select
+                                    value={selectedDocType}
+                                    onChange={e => setSelectedDocType(e.target.value)}
+                                    disabled={docUploading}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100"
+                                >
+                                    <option value="">Select document type...</option>
+                                    {DOCUMENT_TYPES.map(type => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Upload File *</label>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="file"
+                                        key={selectedDocFile ? 'has-file' : 'no-file'}
+                                        onChange={handleDocFileSelect}
+                                        disabled={docUploading}
+                                        accept=".pdf,.doc,.docx,.jpg,.png"
+                                        className="flex-1 text-sm"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleDocUpload}
+                                        disabled={docUploading || !selectedDocFile || !selectedDocType}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2 text-sm transition"
+                                    >
+                                        {docUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                        {docUploading ? 'Uploading...' : 'Upload'}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">Accepted: PDF, DOC, DOCX, JPG, PNG (Max 10MB)</p>
+                                {selectedDocFile && (
+                                    <p className="text-sm text-gray-600 mt-1">Selected: {selectedDocFile.name}</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Uploaded docs list */}
+                        {uploadedDocs.length === 0 ? (
+                            <div className="text-center py-6 bg-yellow-50 rounded-lg border border-yellow-200">
+                                <AlertCircle className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
+                                <p className="text-sm text-yellow-700 font-medium">No documents uploaded yet</p>
+                                <p className="text-xs text-yellow-600 mt-1">Please upload at least one property document for verification.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium text-gray-700">Uploaded Documents ({uploadedDocs.length})</p>
+                                {uploadedDocs.map((doc, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div className="flex items-center gap-2">
+                                            <FileText className="h-4 w-4 text-blue-500" />
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-900">{doc.document_type}</p>
+                                                <p className="text-xs text-gray-500">{doc.document_name}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveDoc(idx)}
+                                            className="text-gray-400 hover:text-red-600 transition"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            case 5:
+                return (
+                    <div className="space-y-6">
                         <h4 className="text-xl font-bold text-gray-800">Amenities</h4>
                         <p className="text-sm text-gray-500 mb-4">Select all that apply to your property.</p>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -301,7 +452,7 @@ export const AddProperty: React.FC = () => {
                         </div>
                     </div>
                 );
-            case 5:
+            case 6:
                 return (
                     <div className="space-y-6">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center mb-6">
@@ -329,11 +480,24 @@ export const AddProperty: React.FC = () => {
                                 <span className="text-gray-500">Location</span>
                                 <span className="font-medium">{formData.address}</span>
                             </div>
-                            <div className="flex justify-between">
+                            <div className="flex justify-between border-b pb-2">
                                 <span className="text-gray-500">Photos</span>
                                 <span className="font-medium">{formData.images.length} uploaded</span>
                             </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Documents</span>
+                                <span className={`font-medium ${uploadedDocs.length === 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                    {uploadedDocs.length} uploaded
+                                </span>
+                            </div>
                         </div>
+
+                        {uploadedDocs.length === 0 && (
+                            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
+                                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                                No property documents uploaded. The admin may request documents before approving your listing.
+                            </div>
+                        )}
 
                         <div className="flex items-center">
                             <input type="checkbox" className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500" required />
@@ -355,7 +519,7 @@ export const AddProperty: React.FC = () => {
             <div className="flex flex-col lg:flex-row gap-8">
                 <div className="flex-1 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-gray-800">Step {step} of {totalSteps}: {['Basic Info', 'Details', 'Media', 'Amenities', 'Review'][step - 1]}</h3>
+                        <h3 className="text-lg font-bold text-gray-800">Step {step} of {totalSteps}: {stepLabels[step - 1]}</h3>
                         <span className="text-primary-600 text-sm font-bold bg-primary-50 px-3 py-1 rounded-full">{Math.round(progress)}% Complete</span>
                     </div>
                     <div className="h-2 bg-gray-100 rounded-full mb-8 overflow-hidden">
@@ -372,6 +536,9 @@ export const AddProperty: React.FC = () => {
                             <button type="submit" className="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition shadow-md shadow-primary-100">
                                 {step === totalSteps ? 'Publish Listing' : 'Save & Continue'}
                             </button>
+                            {step === 4 && uploadedDocs.length === 0 && (
+                                <p className="text-xs text-yellow-600 self-center">⚠ No docs uploaded — you can still continue</p>
+                            )}
                         </div>
                     </form>
                 </div>

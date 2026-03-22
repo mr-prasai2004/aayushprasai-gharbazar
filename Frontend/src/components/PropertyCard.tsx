@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Bed, Bath, Move, Heart } from 'lucide-react';
 import { Property } from '../types';
+import { wishlistApi } from '../services/api';
 
 interface PropertyCardProps {
   property: Property;
@@ -11,38 +12,55 @@ interface PropertyCardProps {
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const navigate = useNavigate();
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
-  // Load wishlist state from localStorage on mount (Keeping localStorage for now to minimize scope creep unless api is ready)
+  // Load wishlist state from API
   useEffect(() => {
+    let mounted = true;
+    const checkWishlistState = async () => {
+      try {
+        const status = await wishlistApi.isInWishlist(property.propertyId);
+        if (mounted) {
+          setIsWishlisted(status);
+        }
+      } catch (err) {
+        console.error('Failed to check wishlist status', err);
+      }
+    };
+
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      checkWishlistState();
+    }
+
+    return () => { mounted = false; };
+  }, [property.propertyId]);
+
+  // Toggle wishlist and persist to API
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click navigation
+    if (isWishlistLoading) return;
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('Please login to save properties to your wishlist.');
+      return;
+    }
+
+    setIsWishlistLoading(true);
     try {
-      const raw = localStorage.getItem('wishlist');
-      const wishlist = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(wishlist) && wishlist.includes(property.propertyId)) {
+      if (isWishlisted) {
+        await wishlistApi.remove(property.propertyId);
+        setIsWishlisted(false);
+      } else {
+        await wishlistApi.add(property.propertyId);
         setIsWishlisted(true);
       }
     } catch (err) {
-      console.error('Failed to load wishlist', err);
-    }
-  }, [property.propertyId]);
-
-  // Toggle wishlist and persist to localStorage
-  const handleWishlistToggle = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click navigation
-    try {
-      const raw = localStorage.getItem('wishlist');
-      let wishlist = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(wishlist)) wishlist = [];
-
-      if (isWishlisted) {
-        wishlist = wishlist.filter((id: string) => id !== property.propertyId);
-      } else {
-        wishlist.push(property.propertyId);
-      }
-
-      localStorage.setItem('wishlist', JSON.stringify(wishlist));
-      setIsWishlisted(!isWishlisted);
-    } catch (err) {
       console.error('Failed to update wishlist', err);
+      alert('Failed to update wishlist. Please try again later.');
+    } finally {
+      setIsWishlistLoading(false);
     }
   };
 
@@ -69,7 +87,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         <div className="flex justify-between items-start mb-2">
           <div>
             <h3 className="text-lg font-bold text-gray-900 line-clamp-1 hover:text-primary-600 transition-colors duration-300">{property.title}</h3>
-            <p className="text-primary-600 font-bold text-lg animate-pulse">${property.price.toLocaleString()}</p>
+            <p className="text-primary-600 font-bold text-lg animate-pulse">NPR {property.price?.toLocaleString('en-NP')}</p>
           </div>
         </div>
 

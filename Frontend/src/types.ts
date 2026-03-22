@@ -58,7 +58,7 @@ export interface Notification {
   notificationId: string;
   ownerId: string;
   propertyId: string;
-  type: 'approved' | 'rejected' | 'verification_required';
+  type: 'approved' | 'rejected' | 'verification_required' | 'password_changed';
   title: string;
   message: string;
   propertyTitle: string;

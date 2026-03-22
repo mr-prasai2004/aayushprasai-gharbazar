@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Navbar } from '../../components/Layout/Navbar';
-import { Footer } from '../../components/Layout/Footer';
+import { Navbar } from '../../components/layout/Navbar';
+import { Footer } from '../../components/layout/Footer';
 import { PropertyCard } from '../../components/PropertyCard';
 import { propertiesApi } from '../../services/api';
 import { Search, Grid, List as ListIcon } from 'lucide-react';
@@ -83,9 +83,9 @@ export const PropertySearch: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
-            <div className="bg-white py-12 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 text-center">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Your Next Dream Property</h1>
+            <div className="bg-white py-8 md:py-12 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">Find Your Next Dream Property</h1>
                     <div className="max-w-3xl mx-auto flex gap-2">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-3.5 text-gray-400 h-5 w-5" />
@@ -102,10 +102,10 @@ export const PropertySearch: React.FC = () => {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6">
                 {/* Filters */}
-                <div className="flex flex-wrap gap-4 mb-8 items-center justify-between">
-                    <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex flex-col md:flex-row flex-wrap gap-4 mb-6 md:mb-8 items-start md:items-center justify-between">
+                    <div className="flex flex-nowrap overflow-x-auto pb-2 md:pb-0 md:flex-wrap w-full md:w-auto gap-3 items-center snap-x hide-scrollbar">
                         {/* Property Type */}
                         <div className="relative">
                             <select
@@ -157,8 +157,8 @@ export const PropertySearch: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* View Toggle */}
-                    <div className="flex items-center gap-2">
+                    {/* View Toggle - Hidden on mobile for simplicity */}
+                    <div className="hidden md:flex items-center gap-2">
                         <button className="p-2 bg-primary-500 text-white rounded shadow-sm"><Grid className="h-5 w-5" /></button>
                         <button className="p-2 bg-white text-gray-500 border border-gray-300 rounded hover:bg-gray-50"><ListIcon className="h-5 w-5" /></button>
                     </div>
