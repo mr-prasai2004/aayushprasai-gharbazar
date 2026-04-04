@@ -192,7 +192,7 @@ public class PropertiesController : ControllerBase
 
         if (property.OwnerId != userId && !User.IsInRole("ADMIN"))
         {
-            return Forbid("You don't have permission to update this property");
+            return StatusCode(403, "You don't have permission to update this property");
         }
 
         if (!string.IsNullOrEmpty(request.Title))
@@ -242,7 +242,7 @@ public class PropertiesController : ControllerBase
 
         if (property.OwnerId != userId && !User.IsInRole("ADMIN"))
         {
-            return Forbid("You don't have permission to delete this property");
+            return StatusCode(403, "You don't have permission to delete this property");
         }
 
         await _propertyRepository.DeleteAsync(id);

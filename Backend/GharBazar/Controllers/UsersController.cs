@@ -79,6 +79,72 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    // GET: api/users/profile - Get current user profile
+    [HttpGet("profile")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> GetProfile()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+            return NotFound(new { message = "User not found" });
+
+        return Ok(new UserDto
+        {
+            UserId = user.UserId,
+            UserName = user.UserName,
+            Email = user.Email,
+            Role = user.Role,
+            FullName = user.FullName,
+            PhoneNumber = user.PhoneNumber,
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            Bio = user.Bio,
+            Address = user.Address,
+            CreatedAt = user.CreatedAt
+        });
+    }
+
+    // PUT: api/users/profile - Update user profile
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+            return NotFound(new { message = "User not found" });
+
+        user.FullName = request.FullName ?? user.FullName;
+        user.PhoneNumber = request.PhoneNumber ?? user.PhoneNumber;
+        user.Address = request.Address ?? user.Address;
+        user.Bio = request.Bio ?? user.Bio;
+        user.ProfilePictureUrl = request.ProfilePictureUrl ?? user.ProfilePictureUrl;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _userRepository.UpdateAsync(user);
+        await _userRepository.SaveChangesAsync();
+
+        return Ok(new UserDto
+        {
+            UserId = user.UserId,
+            UserName = user.UserName,
+            Email = user.Email,
+            Role = user.Role,
+            FullName = user.FullName,
+            PhoneNumber = user.PhoneNumber,
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            Bio = user.Bio,
+            Address = user.Address,
+            CreatedAt = user.CreatedAt
+        });
+    }
+
     // PUT: api/users/{id}/role - Update user role (Admin only)
     [HttpPut("{id}/role")]
     [Authorize(Roles = "ADMIN")]

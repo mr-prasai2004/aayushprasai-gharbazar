@@ -120,3 +120,8 @@ D:\College\3rd\FYP Project\backend\gharbazar\obj\Debug\net10.0\ref\GharBazar.API
 D:\College\3rd\FYP Project\Backend\GharBazar\bin\Debug\net10.0\BouncyCastle.Cryptography.dll
 D:\College\3rd\FYP Project\Backend\GharBazar\bin\Debug\net10.0\MailKit.dll
 D:\College\3rd\FYP Project\Backend\GharBazar\bin\Debug\net10.0\MimeKit.dll
+D:\College\3rd\FYP Project\backend\gharbazar\bin\Debug\net10.0\out\web.config
+D:\College\3rd\FYP Project\backend\gharbazar\bin\Debug\net10.0\out\appsettings.json
+D:\College\3rd\FYP Project\backend\gharbazar\bin\Debug\net10.0\out\GharBazar.API.deps.json
+D:\College\3rd\FYP Project\backend\gharbazar\bin\Debug\net10.0\out\GharBazar.API.runtimeconfig.json
+D:\College\3rd\FYP Project\backend\gharbazar\bin\Debug\net10.0\out\GharBazar.API.staticwebassets.endpoints.json

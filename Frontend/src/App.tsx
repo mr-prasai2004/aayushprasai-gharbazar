@@ -12,6 +12,7 @@ import { ReviewsFeedback } from './pages/dashboard/admin/ReviewsFeedback.jsx';
 import { PropertySearch, PropertyDetails, AddProperty } from './pages/properties/index.js';
 import { Profile, Wishlist, Settings, Bookings } from './pages/profile/index.js';
 import { Messages } from './pages/dashboard/Messages.tsx';
+import SellerTourBookings from './pages/dashboard/seller/SellerTourBookings.tsx';
 import { UserRole } from '../types.ts';
 
 const App = () => {
@@ -41,6 +42,8 @@ const App = () => {
           <Route path="/dashboard/seller" element={<SellerDashboard />} />
           <Route path="/dashboard/add-property" element={<AddProperty />} />
           <Route path="/dashboard/listings" element={<SellerDashboard />} />
+          <Route path="/dashboard/bookings" element={<SellerDashboard />} />
+          <Route path="/dashboard/messages" element={<SellerDashboard />} />
           <Route path="/dashboard/seller/settings" element={<Settings role={UserRole.SELLER} />} />
         </Route>
 

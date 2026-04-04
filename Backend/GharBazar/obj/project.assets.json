@@ -2421,11 +2421,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\College\\3rd\\FYP Project\\Backend\\GharBazar\\GharBazar.API.csproj",
+      "projectUniqueName": "D:\\College\\3rd\\FYP Project\\backend\\gharbazar\\GharBazar.API.csproj",
       "projectName": "GharBazar.API",
-      "projectPath": "D:\\College\\3rd\\FYP Project\\Backend\\GharBazar\\GharBazar.API.csproj",
+      "projectPath": "D:\\College\\3rd\\FYP Project\\backend\\gharbazar\\GharBazar.API.csproj",
       "packagesPath": "C:\\Users\\acer\\.nuget\\packages\\",
-      "outputPath": "D:\\College\\3rd\\FYP Project\\Backend\\GharBazar\\obj\\",
+      "outputPath": "D:\\College\\3rd\\FYP Project\\backend\\gharbazar\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

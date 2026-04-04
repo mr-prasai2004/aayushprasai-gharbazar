@@ -5,7 +5,7 @@ import { UserRole, PropertyStatus, Notification } from '../../../types';
 import { CheckCircle, XCircle, Eye, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { PropertyVerificationCard } from '../../../components/PropertyVerificationCard';
-import { propertiesApi, usersApi } from '../../../services/api';
+import { propertiesApi, usersApi, authApi } from '../../../services/api';
 
 export const AdminDashboard: React.FC = () => {
     const [pendingProperties, setPendingProperties] = useState<any[]>([]);
@@ -21,6 +21,7 @@ export const AdminDashboard: React.FC = () => {
         email: '',
         password: '',
         fullName: '',
+        userName: '',
     });
 
     const navigate = useNavigate();
@@ -149,14 +150,25 @@ export const AdminDashboard: React.FC = () => {
         }
     };
 
-    const handleAddAdmin = () => {
-        if (!adminFormData.email || !adminFormData.password || !adminFormData.fullName) {
+    const handleAddAdmin = async () => {
+        if (!adminFormData.email || !adminFormData.password || !adminFormData.fullName || !adminFormData.userName) {
             alert('Please fill in all fields');
             return;
         }
-        alert(`Admin created: ${adminFormData.fullName} (${adminFormData.email})`);
-        setAdminFormData({ email: '', password: '', fullName: '' });
-        setShowAddAdminModal(false);
+        try {
+            await authApi.register({
+                userName: adminFormData.userName,
+                email: adminFormData.email,
+                password: adminFormData.password,
+                fullName: adminFormData.fullName,
+                role: UserRole.ADMIN,
+            });
+            alert(`Admin account created for ${adminFormData.fullName} (${adminFormData.email}). They will receive a verification email.`);
+            setAdminFormData({ email: '', password: '', fullName: '', userName: '' });
+            setShowAddAdminModal(false);
+        } catch (err: any) {
+            alert(`Failed to create admin: ${err.message}`);
+        }
     };
 
     return (
@@ -345,6 +357,16 @@ export const AdminDashboard: React.FC = () => {
                                     onChange={(e) => setAdminFormData({ ...adminFormData, fullName: e.target.value })}
                                     className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                                     placeholder="e.g., John Smith"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                                <input
+                                    type="text"
+                                    value={adminFormData.userName}
+                                    onChange={(e) => setAdminFormData({ ...adminFormData, userName: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                                    placeholder="e.g., johnsmith"
                                 />
                             </div>
                             <div>

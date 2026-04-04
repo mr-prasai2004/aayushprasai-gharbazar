@@ -52,7 +52,7 @@ public class AuthController : ControllerBase
 
         var token = _authService.GenerateJwtToken(
             user,
-            _configuration["Jwt:SecretKey"] ?? "your-secret-key-here",
+            _configuration["Jwt:SecretKey"] ?? "/BrTJGte0zlNTZxLz5zRFdYrYctx9XKOMX/UFSIV0u4D3WVwJ8UysmNI59VKgEWcTmaX4sSAxRG9Jc2BTNIVZw==",
             _configuration["Jwt:Issuer"] ?? "GharBazar",
             _configuration["Jwt:Audience"] ?? "GharBazarUsers"
         );
@@ -96,7 +96,7 @@ public class AuthController : ControllerBase
             _ = _emailService.SendEmailAsync(
                 request.Email,
                 "Verify Your Email Address - GharBazar",
-                EmailTemplates.EmailVerificationOtp(otp!)
+                EmailTemplates.EmailVerificationOtp(otp!, request.Email)
             );
 
             return Ok(new { message = "Registration successful. Please check your email for the verification code." });
@@ -150,7 +150,7 @@ public class AuthController : ControllerBase
         _ = _emailService.SendEmailAsync(
             user.Email,
             "Welcome to GharBazar!",
-            EmailTemplates.WelcomeEmail(user.UserName)
+            EmailTemplates.WelcomeEmail(user.UserName, user.Email)
         );
 
         var token = _authService.GenerateJwtToken(
@@ -199,7 +199,7 @@ public class AuthController : ControllerBase
         _ = _emailService.SendEmailAsync(
             user.Email,
             "Verify Your Email Address - GharBazar",
-            EmailTemplates.EmailVerificationOtp(otp)
+            EmailTemplates.EmailVerificationOtp(otp, user.Email)
         );
 
         return Ok(new { message = "A new OTP has been sent to your email." });
@@ -281,7 +281,7 @@ public class AuthController : ControllerBase
         _ = _emailService.SendEmailAsync(
             user.Email,
             "Reset Your Password - GharBazar",
-            EmailTemplates.PasswordResetLink(resetLink)
+            EmailTemplates.PasswordResetLink(resetLink, user.Email)
         );
 
         return Ok(new { message = "If the email exists, a reset link has been sent" });
@@ -328,7 +328,7 @@ public class AuthController : ControllerBase
             _ = _emailService.SendEmailAsync(
                 user.Email,
                 "Your Password Has Been Reset - GharBazar",
-                EmailTemplates.PasswordChangedConfirmation()
+                EmailTemplates.PasswordChangedConfirmation(user.Email)
             );
 
             // Create dashboard notification
@@ -418,7 +418,7 @@ public class AuthController : ControllerBase
             _ = _emailService.SendEmailAsync(
                 user.Email,
                 "Your Password Has Been Changed - GharBazar",
-                EmailTemplates.PasswordChangedConfirmation()
+                EmailTemplates.PasswordChangedConfirmation(user.Email)
             );
 
             // Create dashboard notification

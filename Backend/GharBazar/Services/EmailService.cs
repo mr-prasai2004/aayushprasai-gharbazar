@@ -63,41 +63,67 @@ public class EmailService : IEmailService
 // Static helper class for building branded HTML email templates
 public static class EmailTemplates
 {
-    private static string WrapInLayout(string title, string bodyContent)
+    private static string WrapInLayout(string bodyContent, string sentToEmail = "")
     {
+        var footerSentTo = !string.IsNullOrEmpty(sentToEmail)
+            ? $@"<p style=""color:#8e8e8e;font-size:12px;margin:6px 0 0;"">This message was sent to <a href=""mailto:{sentToEmail}"" style=""color:#385898;text-decoration:none;"">{sentToEmail}</a>.</p>"
+            : "";
+
         return $@"
 <!DOCTYPE html>
-<html>
+<html lang=""en"">
 <head>
     <meta charset=""utf-8"">
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>GharBazar</title>
 </head>
-<body style=""margin:0;padding:0;background-color:#f4f6f9;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"">
-    <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#f4f6f9;padding:40px 0;"">
+<body style=""margin:0;padding:0;background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"">
+    <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#ffffff;"">
         <tr>
-            <td align=""center"">
-                <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);"">
-                    <!-- Header -->
+            <td align=""center"" style=""padding:40px 20px 0;"">
+
+                <!-- Logo -->
+                <table width=""468"" cellpadding=""0"" cellspacing=""0"">
                     <tr>
-                        <td style=""background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:32px 40px;text-align:center;"">
-                            <h1 style=""color:#ffffff;margin:0;font-size:28px;font-weight:700;letter-spacing:-0.5px;"">🏠 GharBazar</h1>
-                        </td>
-                    </tr>
-                    <!-- Body -->
-                    <tr>
-                        <td style=""padding:40px;"">
-                            <h2 style=""color:#1e293b;margin:0 0 20px;font-size:22px;font-weight:600;"">{title}</h2>
-                            {bodyContent}
-                        </td>
-                    </tr>
-                    <!-- Footer -->
-                    <tr>
-                        <td style=""background-color:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;"">
-                            <p style=""color:#94a3b8;font-size:13px;margin:0;"">© {DateTime.UtcNow.Year} GharBazar. All rights reserved.</p>
-                            <p style=""color:#94a3b8;font-size:12px;margin:8px 0 0;"">This is an automated message, please do not reply.</p>
+                        <td align=""center"" style=""padding-bottom:28px;"">
+                            <table cellpadding=""0"" cellspacing=""0"">
+                                <tr>
+                                    <td style=""background:linear-gradient(135deg,#1d4ed8,#2563eb);border-radius:14px;padding:10px 14px;vertical-align:middle;"">
+                                        <span style=""font-size:22px;"">🏠</span>
+                                    </td>
+                                    <td style=""padding-left:10px;vertical-align:middle;"">
+                                        <span style=""font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:400;color:#1a1a1a;letter-spacing:-0.5px;"">GharBazar</span>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
                 </table>
+
+                <!-- Card -->
+                <table width=""468"" cellpadding=""0"" cellspacing=""0"" style=""border:1px solid #dbdbdb;border-radius:4px;"">
+                    <tr>
+                        <td style=""padding:40px 40px 28px;"">
+                            {bodyContent}
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Footer -->
+                <table width=""468"" cellpadding=""0"" cellspacing=""0"">
+                    <tr>
+                        <td style=""padding:18px 0 40px;text-align:center;"">
+                            <p style=""color:#8e8e8e;font-size:12px;margin:0;"">from</p>
+                            <p style=""color:#1a1a1a;font-size:14px;font-weight:700;margin:4px 0 0;"">🏠 GharBazar</p>
+                            <p style=""color:#8e8e8e;font-size:12px;margin:10px 0 0;"">© {DateTime.UtcNow.Year} GharBazar, Inc. All rights reserved.</p>
+                            {footerSentTo}
+                            <p style=""color:#8e8e8e;font-size:12px;margin:6px 0 0;"">
+                                <a href=""#"" style=""color:#8e8e8e;text-decoration:underline;"">Remove your email</a> from this account.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
             </td>
         </tr>
     </table>
@@ -105,77 +131,86 @@ public static class EmailTemplates
 </html>";
     }
 
-    public static string WelcomeEmail(string userName)
+    public static string WelcomeEmail(string userName, string sentToEmail = "")
     {
         var body = $@"
-            <p style=""color:#475569;font-size:16px;line-height:1.6;margin:0 0 16px;"">
-                Hello <strong>{userName}</strong>,
+            <p style=""color:#262626;font-size:16px;line-height:1.5;margin:0 0 16px;"">Hi <strong>{userName}</strong>,</p>
+            <p style=""color:#262626;font-size:16px;line-height:1.5;margin:0 0 24px;"">
+                Welcome to <strong>GharBazar</strong>! Your account has been verified and is ready to use.
+                You can now browse properties, save your favorites, and connect with sellers across Nepal.
             </p>
-            <p style=""color:#475569;font-size:16px;line-height:1.6;margin:0 0 24px;"">
-                Welcome to <strong>GharBazar</strong>! Your account has been created successfully. 
-                You can now browse properties, save your favorites, and connect with sellers.
-            </p>
-            <div style=""background-color:#eff6ff;border-left:4px solid #2563eb;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 24px;"">
-                <p style=""color:#1e40af;font-size:14px;margin:0;font-weight:500;"">🎉 Start exploring properties on GharBazar today!</p>
-            </div>
-            <p style=""color:#475569;font-size:15px;line-height:1.6;margin:0;"">
-                Happy house hunting!<br><strong>The GharBazar Team</strong>
-            </p>";
-        return WrapInLayout("Welcome to GharBazar!", body);
-    }
-
-    public static string PasswordResetLink(string resetLink)
-    {
-        var body = $@"
-            <p style=""color:#475569;font-size:16px;line-height:1.6;margin:0 0 16px;"">
-                We received a request to reset your password. Click the button below to set a new password:
-            </p>
-            <div style=""text-align:center;margin:32px 0;"">
-                <a href=""{resetLink}"" style=""display:inline-block;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-weight:600;font-size:16px;box-shadow:0 4px 12px rgba(37,99,235,0.3);"">
-                    Reset Password
+            <div style=""text-align:center;margin:28px 0;"">
+                <a href=""http://localhost:5173"" style=""display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 40px;border-radius:4px;font-weight:600;font-size:15px;"">
+                    Start Exploring
                 </a>
             </div>
-            <div style=""background-color:#fef3c7;border-left:4px solid #f59e0b;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 24px;"">
-                <p style=""color:#92400e;font-size:14px;margin:0;"">⚠️ This link expires in <strong>1 hour</strong>. If you didn't request this, you can safely ignore this email.</p>
-            </div>
-            <p style=""color:#475569;font-size:15px;line-height:1.6;margin:0;"">
-                Stay safe,<br><strong>The GharBazar Team</strong>
-            </p>";
-        return WrapInLayout("Reset Your Password", body);
+            <div style=""border-top:1px solid #dbdbdb;margin-top:28px;padding-top:20px;"">
+                <p style=""color:#8e8e8e;font-size:13px;line-height:1.5;margin:0;"">
+                    Happy house hunting!<br><strong style=""color:#262626;"">The GharBazar Team</strong>
+                </p>
+            </div>";
+        return WrapInLayout(body, sentToEmail);
     }
 
-    public static string PasswordChangedConfirmation()
+    public static string PasswordResetLink(string resetLink, string sentToEmail = "")
     {
         var body = $@"
-            <p style=""color:#475569;font-size:16px;line-height:1.6;margin:0 0 16px;"">
-                Your password has been changed successfully.
+            <p style=""color:#262626;font-size:16px;line-height:1.5;margin:0 0 16px;"">
+                We got a request to reset your GharBazar password.
             </p>
-            <div style=""background-color:#fef2f2;border-left:4px solid #ef4444;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 24px;"">
-                <p style=""color:#991b1b;font-size:14px;margin:0;font-weight:500;"">🔒 If you did not make this change, please reset your password immediately or contact support.</p>
+            <div style=""text-align:center;margin:28px 0;"">
+                <a href=""{resetLink}"" style=""display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 40px;border-radius:4px;font-weight:600;font-size:15px;"">
+                    Reset password
+                </a>
             </div>
-            <p style=""color:#475569;font-size:15px;line-height:1.6;margin:0;"">
-                Stay secure,<br><strong>The GharBazar Team</strong>
-            </p>";
-        return WrapInLayout("Password Changed", body);
+            <p style=""color:#262626;font-size:14px;line-height:1.5;margin:0 0 16px;"">
+                If you ignore this message, your password will not be changed. If you didn't request a password reset,
+                <a href=""mailto:gharbazar2026@gmail.com"" style=""color:#2563eb;text-decoration:none;"">let us know</a>.
+            </p>
+            <div style=""border-top:1px solid #dbdbdb;margin-top:20px;padding-top:16px;"">
+                <p style=""color:#8e8e8e;font-size:12px;margin:0;"">⚠️ This link expires in <strong>1 hour</strong>.</p>
+            </div>";
+        return WrapInLayout(body, sentToEmail);
     }
 
-    public static string EmailVerificationOtp(string otp)
+    public static string PasswordChangedConfirmation(string sentToEmail = "")
     {
         var body = $@"
-            <p style=""color:#475569;font-size:16px;line-height:1.6;margin:0 0 16px;"">
-                Welcome to GharBazar! Please verify your email address to complete your registration.
+            <p style=""color:#262626;font-size:16px;line-height:1.5;margin:0 0 16px;"">
+                Your GharBazar password has been changed successfully.
             </p>
-            <div style=""text-align:center;margin:32px 0;"">
-                <span style=""display:inline-block;background:#f3f4f6;color:#111827;padding:16px 32px;border-radius:12px;font-weight:700;font-size:32px;letter-spacing:8px;border:2px dashed #cbd5e1;"">
+            <p style=""color:#262626;font-size:14px;line-height:1.5;margin:0 0 24px;"">
+                If you made this change, you can ignore this message. If you didn't change your password,
+                <a href=""http://localhost:5173/#/forgot-password"" style=""color:#2563eb;text-decoration:none;"">reset your password</a> immediately or
+                <a href=""mailto:gharbazar2026@gmail.com"" style=""color:#2563eb;text-decoration:none;"">contact support</a>.
+            </p>
+            <div style=""border-top:1px solid #dbdbdb;margin-top:20px;padding-top:16px;"">
+                <p style=""color:#8e8e8e;font-size:12px;margin:0;"">🔒 Your account security is important to us.</p>
+            </div>";
+        return WrapInLayout(body, sentToEmail);
+    }
+
+    public static string EmailVerificationOtp(string otp, string sentToEmail = "")
+    {
+        var body = $@"
+            <p style=""color:#262626;font-size:16px;line-height:1.5;margin:0 0 16px;"">
+                Hi there,
+            </p>
+            <p style=""color:#262626;font-size:16px;line-height:1.5;margin:0 0 24px;"">
+                Please use the verification code below to complete your GharBazar registration.
+                This code is valid for <strong>15 minutes</strong>.
+            </p>
+            <div style=""text-align:center;margin:28px 0;"">
+                <span style=""display:inline-block;background-color:#f5f5f5;color:#262626;padding:18px 36px;border-radius:6px;font-weight:700;font-size:34px;letter-spacing:10px;border:1px solid #dbdbdb;font-family:monospace;"">
                     {otp}
                 </span>
             </div>
-            <div style=""background-color:#fef3c7;border-left:4px solid #f59e0b;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 24px;"">
-                <p style=""color:#92400e;font-size:14px;margin:0;"">⚠️ This code expires in <strong>15 minutes</strong>. Do not share this code with anyone.</p>
-            </div>
-            <p style=""color:#475569;font-size:15px;line-height:1.6;margin:0;"">
-                Happy house hunting,<br><strong>The GharBazar Team</strong>
-            </p>";
-        return WrapInLayout("Verify Your Email Address", body);
+            <p style=""color:#262626;font-size:14px;line-height:1.5;margin:0 0 16px;"">
+                If you ignore this message, your account will not be created and this code will expire shortly.
+            </p>
+            <div style=""border-top:1px solid #dbdbdb;margin-top:20px;padding-top:16px;"">
+                <p style=""color:#8e8e8e;font-size:12px;margin:0;"">⚠️ Do not share this code with anyone.</p>
+            </div>";
+        return WrapInLayout(body, sentToEmail);
     }
 }
