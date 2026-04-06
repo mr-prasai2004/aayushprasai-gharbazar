@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { AlertCircle, CheckCircle, Lock } from 'lucide-react';
 
-const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || 'https://aayushprasai-gharbazar-production.up.railway.app/api';
 
 export const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();

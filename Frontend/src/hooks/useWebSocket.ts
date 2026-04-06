@@ -27,14 +27,16 @@ export const useWebSocket = (props?: UseWebSocketProps) => {
     callbacksRef.current = props;
   });
 
-  // Get WebSocket URL
   const getWebSocketUrl = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Construct from localhost:5000/api/ws
-    const backendHost = window.location.hostname === 'localhost'
-      ? 'localhost:5000'
-      : window.location.host;
-    return `${protocol}//${backendHost}/api/ws`;
+    const defaultApiUrl = import.meta.env.VITE_API_BASE_URL || 'https://aayushprasai-gharbazar-production.up.railway.app/api';
+    // Convert http/https to ws/wss and append /api/ws
+    let wsUrl = defaultApiUrl.replace(/^http/, 'ws');
+    if (wsUrl.endsWith('/api')) {
+       wsUrl += '/ws';
+    } else {
+       wsUrl += '/api/ws';
+    }
+    return wsUrl;
   }, []);
 
   // Get auth token from localStorage

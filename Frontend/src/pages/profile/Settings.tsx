@@ -3,7 +3,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { UserRole } from '../../types';
 import { Lock, Bell, Mail, Smartphone, Shield, Trash2, Save, AlertCircle, CheckCircle } from 'lucide-react';
 
-const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || 'https://aayushprasai-gharbazar-production.up.railway.app/api';
 
 export const Settings: React.FC<{ role: UserRole }> = ({ role }) => {
     const [currentPassword, setCurrentPassword] = useState('');

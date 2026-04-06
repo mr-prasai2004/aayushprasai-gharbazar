@@ -1,7 +1,7 @@
 // API Service for Ghar Bazar
 
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://aayushprasai-gharbazar-production.up.railway.app/api';
 
 // Helper function to get auth token
 const getAuthToken = (): string | null => {
@@ -405,7 +405,7 @@ export const uploadApi = {
   getFileUrl: (path: string): string => {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://aayushprasai-gharbazar-production.up.railway.app';
     // Remove /api from the baseUrl to get the root domain
     const rootUrl = baseUrl.replace('/api', '');
     return `${rootUrl}${path}`;

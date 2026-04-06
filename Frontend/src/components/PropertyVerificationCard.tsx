@@ -47,7 +47,7 @@ export const PropertyVerificationCard: React.FC<PropertyVerificationCardProps> =
   const resolveDocUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('blob:')) return url;
-    const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '');
+    const base = (import.meta.env.VITE_API_BASE_URL || 'https://aayushprasai-gharbazar-production.up.railway.app/api').replace('/api', '');
     return `${base}${url}`;
   };
 
