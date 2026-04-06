@@ -247,6 +247,45 @@ export const tourBookingsApi = {
       method: 'PUT',
     });
   },
+
+  confirm: async (bookingId: string) => {
+    return apiRequest<any>(`/tourbookings/${bookingId}/confirm`, {
+      method: 'PUT',
+    });
+  },
+
+  decline: async (bookingId: string) => {
+    return apiRequest<any>(`/tourbookings/${bookingId}/cancel`, {
+      method: 'PUT',
+    });
+  },
+};
+
+// Documents API
+export const documentsApi = {
+  getByProperty: async (propertyId: string) => {
+    return apiRequest<any[]>(`/documents/property/${propertyId}`);
+  },
+
+  upload: async (propertyId: string, data: { documentType: string; documentName: string; documentUrl: string }) => {
+    return apiRequest<any>(`/documents/${propertyId}/upload`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (documentId: string) => {
+    return apiRequest<void>(`/documents/${documentId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  verify: async (documentId: string, data: { verified: boolean; verificationNotes?: string }) => {
+    return apiRequest<any>(`/documents/${documentId}/verify`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 // Notifications API

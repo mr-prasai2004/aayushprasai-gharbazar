@@ -1,20 +1,21 @@
-import React, { useState } from 'react';
-import { Upload, X, FileText, Check, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, X, FileText, Check, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
+import { documentsApi, uploadApi } from '../services/api';
 
 interface Document {
-  document_id: string;
-  property_id: string;
-  document_type: string;
-  document_name: string;
-  document_url: string;
-  uploaded_date: string;
+  documentId: string;
+  propertyId: string;
+  documentType: string;
+  documentName: string;
+  documentUrl: string;
+  uploadedDate: string;
   verified: boolean;
-  verification_notes?: string;
+  verificationNotes?: string;
 }
 
 interface PropertyDocumentUploadProps {
   propertyId: string;
-  documents?: Document[];
+  documents?: any[];
   onDocumentsChange?: (documents: Document[]) => void;
   readOnly?: boolean;
 }
@@ -29,58 +30,111 @@ const DOCUMENT_TYPES = [
   'Other'
 ];
 
+/** Normalize both snake_case (old local) and camelCase (API) shapes */
+const normalize = (doc: any): Document => ({
+  documentId: doc.documentId || doc.document_id || '',
+  propertyId: doc.propertyId || doc.property_id || '',
+  documentType: doc.documentType || doc.document_type || '',
+  documentName: doc.documentName || doc.document_name || '',
+  documentUrl: doc.documentUrl || doc.document_url || '',
+  uploadedDate: doc.uploadedDate || doc.uploaded_date || '',
+  verified: doc.verified ?? false,
+  verificationNotes: doc.verificationNotes || doc.verification_notes,
+});
+
+/** Turn relative backend paths into full URLs */
+const resolveDocUrl = (url: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:')) return url;
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '');
+  return `${base}${url}`;
+};
+
 export const PropertyDocumentUpload: React.FC<PropertyDocumentUploadProps> = ({
   propertyId,
-  documents = [],
+  documents: propDocuments,
   onDocumentsChange,
-  readOnly = false
+  readOnly = false,
 }) => {
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedType, setSelectedType] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch fresh docs from backend on mount / propertyId change
+  useEffect(() => {
+    if (!propertyId) return;
+    setLoadingDocs(true);
+    documentsApi.getByProperty(propertyId)
+      .then(data => {
+        const normalized = (Array.isArray(data) ? data : []).map(normalize);
+        setDocuments(normalized);
+        onDocumentsChange?.(normalized);
+      })
+      .catch(() => {
+        // Fallback: use prop documents if API fails (e.g. while offline)
+        if (propDocuments?.length) {
+          setDocuments(propDocuments.map(normalize));
+        }
+      })
+      .finally(() => setLoadingDocs(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       setUploadedFile(e.target.files[0]);
+      setError(null);
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedType || !uploadedFile) {
-      alert('Please select document type and file');
+      setError('Please select a document type and file.');
       return;
     }
-
     setIsUploading(true);
-    
-    // Simulate file upload - in real app, would upload to server/cloud storage
-    setTimeout(() => {
-      // For now, create a blob URL that can be opened/previewed
-      const fileUrl = URL.createObjectURL(uploadedFile);
-      
-      const newDocument: Document = {
-        document_id: `d_${Date.now()}`,
-        property_id: propertyId,
-        document_type: selectedType,
-        document_name: uploadedFile.name,
-        document_url: fileUrl,
-        uploaded_date: new Date().toISOString().split('T')[0],
-        verified: false
-      };
+    setError(null);
+    try {
+      // 1. Upload file to server storage
+      const { url, fileName } = await uploadApi.uploadDocument(uploadedFile);
 
-      const updatedDocs = [...documents, newDocument];
-      onDocumentsChange?.(updatedDocs);
+      // 2. Register document record in backend
+      const saved = await documentsApi.upload(propertyId, {
+        documentType: selectedType,
+        documentName: fileName || uploadedFile.name,
+        documentUrl: url,
+      });
 
+      const newDoc = normalize(saved);
+      const updated = [...documents, newDoc];
+      setDocuments(updated);
+      onDocumentsChange?.(updated);
       setSelectedType('');
       setUploadedFile(null);
+    } catch (err: any) {
+      setError(err?.message || 'Upload failed. Please try again.');
+    } finally {
       setIsUploading(false);
-      alert('Document uploaded successfully!');
-    }, 500);
+    }
   };
 
-  const handleRemoveDocument = (docId: string) => {
-    const updatedDocs = documents.filter(doc => doc.document_id !== docId);
-    onDocumentsChange?.(updatedDocs);
+  const handleRemoveDocument = async (docId: string) => {
+    if (!window.confirm('Are you sure you want to remove this document?')) return;
+    setDeletingId(docId);
+    try {
+      await documentsApi.delete(docId);
+      const updated = documents.filter(d => d.documentId !== docId);
+      setDocuments(updated);
+      onDocumentsChange?.(updated);
+    } catch {
+      alert('Failed to delete document. Please try again.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -100,7 +154,7 @@ export const PropertyDocumentUpload: React.FC<PropertyDocumentUploadProps> = ({
               </label>
               <select
                 value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
+                onChange={e => setSelectedType(e.target.value)}
                 disabled={isUploading}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
               >
@@ -115,91 +169,110 @@ export const PropertyDocumentUpload: React.FC<PropertyDocumentUploadProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Upload Document *
               </label>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <input
                   type="file"
                   onChange={handleFileSelect}
                   disabled={isUploading}
-                  className="flex-1"
+                  className="flex-1 min-w-0 text-sm"
                   accept=".pdf,.doc,.docx,.jpg,.png"
                 />
                 <button
                   onClick={handleUpload}
                   disabled={isUploading || !uploadedFile || !selectedType}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2 transition"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2 transition whitespace-nowrap"
                 >
-                  <Upload className="h-4 w-4" />
-                  {isUploading ? 'Uploading...' : 'Upload'}
+                  {isUploading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Uploading...</>
+                  ) : (
+                    <><Upload className="h-4 w-4" /> Upload</>
+                  )}
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)
-              </p>
+              <p className="text-xs text-gray-500 mt-1">Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)</p>
               {uploadedFile && (
-                <p className="text-sm text-gray-600 mt-2">
-                  Selected: {uploadedFile.name}
+                <p className="text-sm text-blue-600 mt-2 flex items-center gap-1">
+                  <FileText className="h-3.5 w-3.5" /> {uploadedFile.name}
                 </p>
               )}
             </div>
+
+            {error && (
+              <p className="text-sm text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />{error}
+              </p>
+            )}
           </div>
         </div>
       )}
 
       {/* Documents List */}
-      {documents.length > 0 ? (
+      {loadingDocs ? (
+        <div className="flex items-center justify-center py-10 text-gray-400 gap-2">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">Loading documents...</span>
+        </div>
+      ) : documents.length > 0 ? (
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-700 mb-3">
             Uploaded Documents ({documents.length})
           </p>
           {documents.map(doc => (
             <div
-              key={doc.document_id}
-              className="flex items-start justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
+              key={doc.documentId}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition gap-3"
             >
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="h-4 w-4 text-gray-400" />
-                  <p className="font-medium text-gray-900 text-sm">{doc.document_type}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                  <p className="font-medium text-gray-900 text-sm truncate">{doc.documentType}</p>
                   {doc.verified && (
-                    <span className="flex items-center gap-1 ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
-                      <Check className="h-3 w-3" />
-                      Verified
+                    <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium flex-shrink-0">
+                      <Check className="h-3 w-3" /> Verified
+                    </span>
+                  )}
+                  {!doc.verified && (
+                    <span className="px-2 py-0.5 bg-yellow-50 text-yellow-600 border border-yellow-200 rounded text-xs flex-shrink-0">
+                      Pending verification
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500">
-                  {doc.document_name} · Uploaded: {doc.uploaded_date}
+                <p className="text-xs text-gray-500 truncate">
+                  {doc.documentName}
+                  {doc.uploadedDate && ` · ${new Date(doc.uploadedDate).toLocaleDateString('en-NP')}`}
                 </p>
-                {doc.verification_notes && (
+                {doc.verificationNotes && (
                   <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {doc.verification_notes}
+                    <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                    {doc.verificationNotes}
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2 ml-4">
-                {doc.document_url && (
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {doc.documentUrl && (
                   <a
-                    href={doc.document_url}
+                    href={resolveDocUrl(doc.documentUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    onClick={(e) => {
-                      if (!doc.document_url.startsWith('http')) {
-                        e.preventDefault();
-                        alert('Document preview not available. In production, this would open the document from cloud storage.');
-                      }
-                    }}
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 rounded hover:bg-blue-50 transition"
+                    title="View document"
                   >
+                    <ExternalLink className="h-3.5 w-3.5" />
                     View
                   </a>
                 )}
                 {!readOnly && (
                   <button
-                    onClick={() => handleRemoveDocument(doc.document_id)}
-                    className="text-gray-400 hover:text-red-600 transition"
+                    onClick={() => handleRemoveDocument(doc.documentId)}
+                    disabled={deletingId === doc.documentId}
+                    className="text-gray-400 hover:text-red-600 transition disabled:opacity-40 p-1"
+                    title="Delete document"
                   >
-                    <X className="h-4 w-4" />
+                    {deletingId === doc.documentId
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <X className="h-4 w-4" />
+                    }
                   </button>
                 )}
               </div>
@@ -210,7 +283,7 @@ export const PropertyDocumentUpload: React.FC<PropertyDocumentUploadProps> = ({
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
           <p className="text-gray-500 text-sm">
-            {readOnly ? 'No documents uploaded' : 'No documents uploaded yet'}
+            {readOnly ? 'No documents uploaded' : 'No documents uploaded yet. Use the form above to add documents.'}
           </p>
         </div>
       )}

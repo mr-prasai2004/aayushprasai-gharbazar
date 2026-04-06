@@ -29,7 +29,7 @@ export const SellerDashboard: React.FC = () => {
             navigate('/dashboard/listings');
             setActiveTab(tab);
         } else if (tab === 'Tour Bookings') {
-            navigate('/dashboard/bookings');
+            navigate('/dashboard/seller/bookings');
             setActiveTab(tab);
         } else if (tab === 'Messages') {
             navigate('/dashboard/messages');
@@ -44,7 +44,7 @@ export const SellerDashboard: React.FC = () => {
     useEffect(() => {
         const path = location.pathname;
         if (path.includes('/dashboard/messages')) setActiveTab('Messages');
-        else if (path.includes('/dashboard/bookings')) setActiveTab('Tour Bookings');
+        else if (path.includes('/dashboard/seller/bookings')) setActiveTab('Tour Bookings');
         else if (path.includes('/dashboard/listings')) setActiveTab('My Listings');
         else if (path.includes('/dashboard/add-property')) setActiveTab('Add New Property');
         else setActiveTab('Overview');

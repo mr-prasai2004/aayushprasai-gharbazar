@@ -1,0 +1,20 @@
+# Artifacts and docs not needed in repo
+Artifacts/
+Postman-API-Testing-Guide.md
+
+# Frontend
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.env
+Frontend/*.tsbuildinfo
+
+# Backend
+Backend/GharBazar/bin/
+Backend/GharBazar/obj/
+Backend/GharBazar/out/
+Backend/GharBazar/.vs/
+Backend/.vs/
+
+# OS
+.DS_Store
+Thumbs.db

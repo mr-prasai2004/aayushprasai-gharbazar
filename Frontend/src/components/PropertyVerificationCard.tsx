@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle, XCircle, FileText, MapPin, DollarSign, Home, X, AlertCircle } from 'lucide-react';
 import { Property } from '../types';
+import { documentsApi } from '../services/api';
 
 interface PropertyVerificationCardProps {
   property: Property;
@@ -14,6 +15,17 @@ export const PropertyVerificationCard: React.FC<PropertyVerificationCardProps> =
   const [showDecisionModal, setShowDecisionModal] = useState(false);
   const [decision, setDecision] = useState<'verified' | 'rejected' | null>(null);
   const [notes, setNotes] = useState('');
+  const [localDocs, setLocalDocs] = useState<any[]>(property.documents || []);
+
+  const handleDocVerifyToggle = async (docId: string, currentStatus: boolean) => {
+    try {
+      const newStatus = !currentStatus;
+      await documentsApi.verify(docId, { verified: newStatus, verificationNotes: newStatus ? '' : 'Rejected during admin review' });
+      setLocalDocs(docs => docs.map(d => d.documentId === docId ? { ...d, verified: newStatus } : d));
+    } catch (err) {
+      alert('Failed to update document verification status');
+    }
+  };
 
   const handleSubmitDecision = () => {
     if (!decision) {
@@ -31,6 +43,13 @@ export const PropertyVerificationCard: React.FC<PropertyVerificationCardProps> =
   };
 
   const allDocsVerified = property.documents && property.documents.length > 0 && property.documents.every(d => d.verified);
+
+  const resolveDocUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
+    const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '');
+    return `${base}${url}`;
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition">
@@ -93,15 +112,15 @@ export const PropertyVerificationCard: React.FC<PropertyVerificationCardProps> =
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center gap-2 mb-3">
           <FileText className="h-5 w-5 text-blue-600" />
-          <h4 className="font-semibold text-gray-900">Documents ({property.documents?.length || 0})</h4>
+          <h4 className="font-semibold text-gray-900">Documents ({localDocs.length})</h4>
         </div>
 
-        {property.documents && property.documents.length > 0 ? (
+        {localDocs.length > 0 ? (
           <div className="space-y-2">
-            {property.documents.map((doc: any) => (
+            {localDocs.map((doc: any) => (
               <div
                 key={doc.documentId}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                className={`flex items-center justify-between p-3 rounded-lg border ${doc.verified ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -116,21 +135,22 @@ export const PropertyVerificationCard: React.FC<PropertyVerificationCardProps> =
                   </div>
                   <p className="text-xs text-gray-500 mt-1">{doc.documentName}</p>
                 </div>
-                <a
-                  href={doc.documentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1 hover:bg-blue-50 rounded transition"
-                  onClick={(e) => {
-                    // For mock documents with example URLs, show alert
-                    if (doc.documentUrl.includes('example.com')) {
-                      e.preventDefault();
-                      alert(`Document: ${doc.documentName}\n\nIn production, this would open the ${doc.documentType} from cloud storage.`);
-                    }
-                  }}
-                >
-                  View
-                </a>
+                <div className="flex items-center gap-3">
+                  <a
+                    href={resolveDocUrl(doc.documentUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1 hover:bg-blue-50 rounded transition"
+                  >
+                    View
+                  </a>
+                  <button
+                    onClick={() => handleDocVerifyToggle(doc.documentId, doc.verified)}
+                    className={`text-sm font-medium px-3 py-1 rounded transition ${doc.verified ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                  >
+                    {doc.verified ? 'Unverify' : 'Verify'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

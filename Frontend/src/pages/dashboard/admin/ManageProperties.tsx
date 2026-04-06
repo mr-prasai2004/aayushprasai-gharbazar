@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../../components/layout';
 import { UserRole } from '../../../types';
 import { propertiesApi } from '../../../services/api';
-import { Trash2, Edit2, X } from 'lucide-react';
+import { Trash2, X, Eye, User as UserIcon } from 'lucide-react';
+import { PropertyVerificationCard } from '../../../components/PropertyVerificationCard';
+import { usersApi } from '../../../services/api';
 
 export const AdminManageProperties: React.FC = () => {
     const [props, setProps] = useState<any[]>([]);
@@ -25,42 +27,24 @@ export const AdminManageProperties: React.FC = () => {
         }
     };
 
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingProperty, setEditingProperty] = useState<any>(null);
-    const [editFormData, setEditFormData] = useState<any>(null);
+    const [viewingOwnerId, setViewingOwnerId] = useState<string | null>(null);
+    const [ownerData, setOwnerData] = useState<any>(null);
+    const [loadingOwner, setLoadingOwner] = useState(false);
+    
+    // Add view property state
+    const [viewingProperty, setViewingProperty] = useState<any>(null);
 
-    const handleEditProperty = (property: any) => {
-        setEditingProperty(property);
-        setEditFormData({
-            title: property.title,
-            location: property.location,
-            price: property.price,
-            bedrooms: property.bedrooms,
-            bathrooms: property.bathrooms,
-            areaSqft: property.areaSqft,
-            propertyType: property.propertyType,
-            status: property.status,
-            description: property.description,
-        });
-        setShowEditModal(true);
-    };
-
-    const handleSaveEdit = async () => {
-        if (!editFormData.title || !editFormData.price || !editFormData.location) {
-            alert('Please fill in all required fields');
-            return;
-        }
-
+    const handleViewOwner = async (ownerId: string) => {
+        setViewingOwnerId(ownerId);
+        setLoadingOwner(true);
         try {
-            const updated = await propertiesApi.update(editingProperty.propertyId, editFormData);
-            setProps(props.map(p => p.propertyId === editingProperty.propertyId ? updated : p));
-            alert('Property updated successfully!');
-            setShowEditModal(false);
-            setEditingProperty(null);
-            setEditFormData(null);
+            const user = await usersApi.getById(ownerId);
+            setOwnerData(user);
         } catch (err) {
-            console.error('Failed to update property', err);
-            alert('Failed to update property');
+            console.error('Failed to load owner profile', err);
+            alert('Failed to load owner profile');
+        } finally {
+            setLoadingOwner(false);
         }
     };
 
@@ -73,6 +57,20 @@ export const AdminManageProperties: React.FC = () => {
                 console.error('Failed to delete property', err);
                 alert('Failed to delete property');
             }
+        }
+    };
+
+    const handlePropertyVerification = async (propertyId: string, status: 'verified' | 'rejected', notes: string) => {
+        try {
+            await propertiesApi.verify(propertyId, { verificationStatus: status, verificationNotes: notes });
+            alert(`Property ${status === 'verified' ? 'verified' : 'rejected'} successfully!`);
+            
+            // Refresh list with updated status
+            setProps(props.map(p => p.propertyId === propertyId ? { ...p, verificationStatus: status } : p));
+            setViewingProperty(null);
+        } catch (err) {
+            console.error('Failed to verify property', err);
+            alert('Failed to verify property');
         }
     };
 
@@ -110,10 +108,16 @@ export const AdminManageProperties: React.FC = () => {
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${p.status === 'For Sale' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                                             {p.status}
                                         </span>
+                                        {p.verificationStatus === 'pending' && (
+                                            <span className="ml-2 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                                                Pending Review
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-3 flex gap-2">
-                                        <button onClick={() => handleEditProperty(p)} className="text-gray-400 hover:text-blue-600 p-1"><Edit2 className="h-4 w-4" /></button>
-                                        <button onClick={() => handleDelete(p.propertyId)} className="text-gray-400 hover:text-red-600 p-1"><Trash2 className="h-4 w-4" /></button>
+                                        <button onClick={() => setViewingProperty(p)} className="text-gray-400 hover:text-green-600 p-1" title="View Property & Verify"><Eye className="h-4 w-4" /></button>
+                                        <button onClick={() => handleViewOwner(p.ownerId)} className="text-gray-400 hover:text-blue-600 p-1" title="View Owner Profile"><UserIcon className="h-4 w-4" /></button>
+                                        <button onClick={() => handleDelete(p.propertyId)} className="text-gray-400 hover:text-red-600 p-1" title="Delete"><Trash2 className="h-4 w-4" /></button>
                                     </td>
                                 </tr>
                             ))}
@@ -134,13 +138,21 @@ export const AdminManageProperties: React.FC = () => {
                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${p.status === 'For Sale' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                                             {p.status}
                                         </span>
+                                        {p.verificationStatus === 'pending' && (
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-700">
+                                                Pending
+                                            </span>
+                                        )}
                                         <p className="font-bold text-primary-600 text-sm">${p.price.toLocaleString()}</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={() => handleEditProperty(p)} className="flex-1 flex items-center justify-center gap-2 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
-                                    <Edit2 className="h-3.5 w-3.5" /> Edit
+                                <button onClick={() => setViewingProperty(p)} className="flex-1 flex items-center justify-center gap-2 py-2 border border-green-200 rounded-lg text-sm font-medium text-green-700 hover:bg-green-50 transition">
+                                    <Eye className="h-3.5 w-3.5" /> View
+                                </button>
+                                <button onClick={() => handleViewOwner(p.ownerId)} className="flex-1 flex items-center justify-center gap-2 py-2 border border-blue-200 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition">
+                                    <UserIcon className="h-3.5 w-3.5" /> Profile
                                 </button>
                                 <button onClick={() => handleDelete(p.propertyId)} className="flex-1 flex items-center justify-center gap-2 py-2 border border-red-100 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition">
                                     <Trash2 className="h-3.5 w-3.5" /> Delete
@@ -153,143 +165,100 @@ export const AdminManageProperties: React.FC = () => {
                     {!loading && props.length === 0 && <p className="text-center py-4 text-gray-500">No properties found.</p>}
                 </div>
 
-            {/* Edit Property Modal */}
-            {showEditModal && editingProperty && editFormData && (
+            {/* Owner Profile Modal (ID Card Style) */}
+            {viewingOwnerId && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl p-6 max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden relative">
+                        <button onClick={() => { setViewingOwnerId(null); setOwnerData(null); }} className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-1.5 transition">
+                            <X className="h-5 w-5" />
+                        </button>
+                        
+                        {loadingOwner ? (
+                            <div className="p-10 text-center text-gray-500">Loading profile...</div>
+                        ) : ownerData ? (
+                            <div className="flex flex-col">
+                                {/* Top ID Section */}
+                                <div className="bg-gradient-to-b from-blue-50 to-white px-6 pt-10 pb-6 flex flex-col items-center border-b border-gray-100">
+                                    <div className="relative flex flex-col items-center">
+                                        <div className="w-28 h-28 rounded-full p-1.5 bg-white shadow-sm border border-gray-100">
+                                            <img 
+                                                src={ownerData.profilePictureUrl || 'https://placehold.co/150'} 
+                                                alt={ownerData.fullName || ownerData.userName} 
+                                                className="w-full h-full rounded-full object-cover" 
+                                            />
+                                        </div>
+                                        <div className="-mt-3">
+                                           <span className="px-4 py-1 bg-blue-600 text-white text-[10px] font-bold tracking-widest rounded-full uppercase shadow-sm">
+                                               {ownerData.role}
+                                           </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <h2 className="text-xl font-bold text-gray-900 mt-4 text-center">{ownerData.fullName || ownerData.userName}</h2>
+                                    <p className="text-sm text-gray-500 font-medium mt-1">@{ownerData.userName}</p>
+                                    
+                                    {ownerData.createdAt && (
+                                        <p className="text-xs text-gray-400 mt-2 font-medium bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                                            Member since {new Date(ownerData.createdAt).getFullYear()}
+                                        </p>
+                                    )}
+                                </div>
+                                
+                                {/* Details Section */}
+                                <div className="p-6 bg-white space-y-4">
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Email Address</p>
+                                        <p className="text-sm text-gray-800 font-medium truncate">{ownerData.email}</p>
+                                    </div>
+                                    
+                                    {ownerData.phoneNumber && (
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Phone Number</p>
+                                        <p className="text-sm text-gray-800 font-medium">{ownerData.phoneNumber}</p>
+                                    </div>
+                                    )}
+                                    
+                                    {ownerData.address && (
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Address</p>
+                                        <p className="text-sm text-gray-800 font-medium">{ownerData.address}</p>
+                                    </div>
+                                    )}
+                                    
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">About</p>
+                                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{ownerData.bio || 'No bio provided by this user.'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="p-10 text-center text-red-500">Could not load user data.</div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* View Property Modal */}
+            {viewingProperty && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl p-6 max-w-4xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-2xl font-bold text-gray-900">Edit Property</h3>
-                            <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
+                            <h3 className="text-2xl font-bold text-gray-900">Property Details & Verification</h3>
+                            <button onClick={() => setViewingProperty(null)} className="text-gray-400 hover:text-gray-600 p-1">
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Title *</label>
-                                    <input
-                                        type="text"
-                                        value={editFormData.title}
-                                        onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
-                                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                                        placeholder="e.g., Luxury Hillside Villa"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
-                                    <input
-                                        type="text"
-                                        value={editFormData.location}
-                                        onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
-                                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                                        placeholder="City, State"
-                                    />
-                                </div>
-                            </div>
+                        <PropertyVerificationCard
+                            property={viewingProperty}
+                            onVerify={handlePropertyVerification}
+                        />
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Price (USD) *</label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-3 text-gray-500">$</span>
-                                        <input
-                                            type="number"
-                                            value={editFormData.price}
-                                            onChange={(e) => setEditFormData({ ...editFormData, price: parseFloat(e.target.value) })}
-                                            className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                                            placeholder="500000"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
-                                    <select
-                                        value={editFormData.propertyType}
-                                        onChange={(e) => setEditFormData({ ...editFormData, propertyType: e.target.value })}
-                                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                                    >
-                                        <option>House</option>
-                                        <option>Apartment</option>
-                                        <option>Condo</option>
-                                        <option>Villa</option>
-                                        <option>Land</option>
-                                        <option>Commercial</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
-                                    <input
-                                        type="number"
-                                        value={editFormData.bedrooms}
-                                        onChange={(e) => setEditFormData({ ...editFormData, bedrooms: parseInt(e.target.value) })}
-                                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                                        placeholder="3"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
-                                    <input
-                                        type="number"
-                                        value={editFormData.bathrooms}
-                                        onChange={(e) => setEditFormData({ ...editFormData, bathrooms: parseInt(e.target.value) })}
-                                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                                        placeholder="2"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Area (Sq Ft)</label>
-                                    <input
-                                        type="number"
-                                        value={editFormData.areaSqft}
-                                        onChange={(e) => setEditFormData({ ...editFormData, areaSqft: parseInt(e.target.value) })}
-                                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                                        placeholder="2000"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                                    <select
-                                        value={editFormData.status}
-                                        onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-                                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                                    >
-                                        <option>For Sale</option>
-                                        <option>For Rent</option>
-                                        <option>Sold</option>
-                                        <option>Pending</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                                <textarea
-                                    value={editFormData.description}
-                                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                                    placeholder="Describe the property..."
-                                    rows={4}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+                        <div className="flex justify-end mt-6 pt-6 border-t border-gray-200">
                             <button
-                                onClick={() => setShowEditModal(false)}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSaveEdit}
-                                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition">
-                                Save Changes
+                                onClick={() => setViewingProperty(null)}
+                                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">
+                                Close
                             </button>
                         </div>
                     </div>

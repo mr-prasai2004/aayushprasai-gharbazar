@@ -23,6 +23,7 @@ export const SellerTourBookings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
+  const [updating, setUpdating] = useState<string | null>(null);
 
   // Format date to readable format
   const formatDate = (dateStr: string) => {
@@ -57,6 +58,31 @@ export const SellerTourBookings: React.FC = () => {
 
     fetchBookings();
   }, []);
+
+  const handleConfirm = async (bookingId: string) => {
+    setUpdating(bookingId);
+    try {
+      await tourBookingsApi.confirm(bookingId);
+      setBookings(prev => prev.map(b => b.bookingId === bookingId ? { ...b, status: 'Confirmed' } : b));
+    } catch (err) {
+      alert('Failed to confirm booking. Please try again.');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleDecline = async (bookingId: string) => {
+    if (!window.confirm('Are you sure you want to decline this tour request?')) return;
+    setUpdating(bookingId);
+    try {
+      await tourBookingsApi.decline(bookingId);
+      setBookings(prev => prev.map(b => b.bookingId === bookingId ? { ...b, status: 'Cancelled' } : b));
+    } catch (err) {
+      alert('Failed to decline booking. Please try again.');
+    } finally {
+      setUpdating(null);
+    }
+  };
 
   // Filter bookings by status
   const filteredBookings = filterStatus === 'all' 
@@ -225,13 +251,21 @@ export const SellerTourBookings: React.FC = () => {
               {/* Actions */}
               {booking.status?.toLowerCase() === 'pending' && (
                 <div className="flex gap-3 pt-4 border-t border-gray-100">
-                  <button className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition-colors">
+                  <button
+                    onClick={() => handleConfirm(booking.bookingId)}
+                    disabled={updating === booking.bookingId}
+                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50"
+                  >
                     <CheckCircle className="h-4 w-4" />
-                    Confirm Booking
+                    {updating === booking.bookingId ? 'Updating...' : 'Confirm Booking'}
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 rounded-lg transition-colors">
+                  <button
+                    onClick={() => handleDecline(booking.bookingId)}
+                    disabled={updating === booking.bookingId}
+                    className="flex-1 flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 rounded-lg transition-colors disabled:opacity-50"
+                  >
                     <X className="h-4 w-4" />
-                    Decline
+                    {updating === booking.bookingId ? 'Updating...' : 'Decline'}
                   </button>
                 </div>
               )}
