@@ -80,9 +80,11 @@ builder.Services.AddAuthorization();
 // ===============================
 // CORS
 // ===============================
-var allowedOrigins = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")
-    ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    ?? throw new Exception("❌ ALLOWED_ORIGINS missing in Railway variables");
+var allowedOrigins = (Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")
+    ?? throw new Exception("❌ ALLOWED_ORIGINS missing in Railway variables"))
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(o => o.TrimEnd('/'))
+    .ToArray();
 
 builder.Services.AddCors(options =>
 {
@@ -146,6 +148,24 @@ catch (Exception ex)
 app.UseWebSockets();
 
 // ===============================
+// Static Files
+// ===============================
+app.UseStaticFiles();
+
+// ===============================
+// Routing → CORS → Auth (correct order)
+// ===============================
+app.UseRouting();
+app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
+
+// ===============================
+// WebSocket Middleware
+// ===============================
+app.UseMiddleware<WebSocketMiddleware>();
+
+// ===============================
 // Health Check
 // ===============================
 app.MapGet("/health", () =>
@@ -154,34 +174,13 @@ app.MapGet("/health", () =>
         status = "healthy",
         timestamp = DateTime.UtcNow
     })
-);
+).RequireCors("AllowFrontend");
 
 // ===============================
 // Swagger UI
 // ===============================
 app.UseSwagger();
 app.UseSwaggerUI();
-
-// ===============================
-// Static Files
-// ===============================
-app.UseStaticFiles();
-
-// ===============================
-// CORS
-// ===============================
-app.UseCors("AllowFrontend");
-
-// ===============================
-// Authentication
-// ===============================
-app.UseAuthentication();
-app.UseAuthorization();
-
-// ===============================
-// WebSocket Middleware
-// ===============================
-app.UseMiddleware<WebSocketMiddleware>();
 
 // ===============================
 // Controllers
