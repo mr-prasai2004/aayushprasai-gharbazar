@@ -107,9 +107,29 @@ builder.Services.AddCors(options =>
 // ===============================
 // Services
 // ===============================
+// EmailSettings — reads from appsettings.json first, then Railway env vars
+// Railway injects env vars like: EmailSettings__SmtpHost, EmailSettings__SmtpPort,
+// EmailSettings__SenderName, EmailSettings__SenderEmail, EmailSettings__Password
+// .NET configuration automatically maps __ to nested keys, so GetSection works.
+// Explicit env-var fallback below is a safety net for any edge cases.
 var emailSettings = builder.Configuration
     .GetSection("EmailSettings")
     .Get<EmailSettings>() ?? new EmailSettings();
+
+// Explicit per-field env-var fallback (for Railway)
+if (string.IsNullOrWhiteSpace(emailSettings.SmtpHost))
+    emailSettings.SmtpHost = Environment.GetEnvironmentVariable("EmailSettings__SmtpHost") ?? "";
+if (emailSettings.SmtpPort == 0)
+    int.TryParse(Environment.GetEnvironmentVariable("EmailSettings__SmtpPort"), out emailSettings.SmtpPort);
+if (string.IsNullOrWhiteSpace(emailSettings.SenderName))
+    emailSettings.SenderName = Environment.GetEnvironmentVariable("EmailSettings__SenderName") ?? "";
+if (string.IsNullOrWhiteSpace(emailSettings.SenderEmail))
+    emailSettings.SenderEmail = Environment.GetEnvironmentVariable("EmailSettings__SenderEmail") ?? "";
+if (string.IsNullOrWhiteSpace(emailSettings.Password))
+    emailSettings.Password = Environment.GetEnvironmentVariable("EmailSettings__Password") ?? "";
+
+// Log email config at startup (mask password)
+Console.WriteLine($"✅ EmailSettings loaded — Host: {emailSettings.SmtpHost}, Port: {emailSettings.SmtpPort}, From: {emailSettings.SenderEmail}, HasPassword: {!string.IsNullOrWhiteSpace(emailSettings.Password)}");
 
 builder.Services.AddSingleton(emailSettings);
 
