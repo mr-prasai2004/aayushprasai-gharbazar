@@ -113,7 +113,7 @@ builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<ITourBookingRepository, TourBookingRepository>();
-builder.Services.AddSingleton<IWebSocketManager, WebSocketManager>();
+builder.Services.AddSingleton<IWebSocketManager, GharBazar.API.Services.WebSocketManager>();
 
 // ===============================
 // Swagger
