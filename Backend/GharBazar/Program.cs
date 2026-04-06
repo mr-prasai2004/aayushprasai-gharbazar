@@ -8,11 +8,15 @@ using GharBazar.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Port binding (Railway injects PORT env var) ────────────────────────────
+// ===============================
+// Railway Port Binding
+// ===============================
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://+:{port}");
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-// ── Request size limits ────────────────────────────────────────────────────
+// ===============================
+// Request Size Limits
+// ===============================
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 52428800; // 50 MB
@@ -23,20 +27,28 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
     serverOptions.Limits.MaxRequestBodySize = 52428800; // 50 MB
 });
 
+// ===============================
+// Controllers
+// ===============================
 builder.Services.AddControllers();
 
-// ── Database ───────────────────────────────────────────────────────────────
+// ===============================
+// Database
+// ===============================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Server=localhost;Database=ghar_bazar;User=root;Password=;";
+    ?? throw new Exception("❌ DefaultConnection missing in Railway variables");
 
 builder.Services.AddDbContext<GharBazarDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
-        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+           .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
 );
 
-// ── Authentication & Authorization ─────────────────────────────────────────
+// ===============================
+// JWT Authentication
+// ===============================
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
-    ?? "your-very-long-secret-key-for-jwt-that-should-be-at-least-32-characters-long";
+    ?? throw new Exception("❌ Jwt:SecretKey missing in Railway variables");
+
 var key = Encoding.ASCII.GetBytes(jwtSecretKey);
 
 builder.Services.AddAuthentication(options =>
@@ -63,38 +75,33 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// ── CORS ───────────────────────────────────────────────────────────────────
-var allowedOriginsEnv = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS");
-var productionOrigins = allowedOriginsEnv?
-    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    ?? Array.Empty<string>();
+// ===============================
+// CORS
+// ===============================
+var allowedOrigins = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")
+    ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? throw new Exception("❌ ALLOWED_ORIGINS missing in Railway variables");
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-
-    options.AddPolicy("AllowLocalhost",
-        b => b
-            .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:3000",
-                         "http://127.0.0.1:5173", "http://127.0.0.1:5174")
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials());
-
-    options.AddPolicy("AllowProduction",
-        b =>
-        {
-            if (productionOrigins.Length > 0)
-                b.WithOrigins(productionOrigins).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
-            else
-                b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-        });
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
 });
 
-// ── Services ───────────────────────────────────────────────────────────────
-var emailSettings = builder.Configuration.GetSection("EmailSettings").Get<EmailSettings>() ?? new EmailSettings();
+// ===============================
+// Services
+// ===============================
+var emailSettings = builder.Configuration
+    .GetSection("EmailSettings")
+    .Get<EmailSettings>() ?? new EmailSettings();
+
 builder.Services.AddSingleton(emailSettings);
+
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -106,52 +113,77 @@ builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<ITourBookingRepository, TourBookingRepository>();
-builder.Services.AddSingleton<IWebSocketManager, GharBazar.API.Services.WebSocketManager>();
+builder.Services.AddSingleton<IWebSocketManager, WebSocketManager>();
 
-// ── Swagger/OpenAPI ────────────────────────────────────────────────────────
+// ===============================
+// Swagger
+// ===============================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// ── Auto-apply EF Core migrations on startup (non-fatal) ──────────────────
+// ===============================
+// Auto Migration
+// ===============================
 try
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<GharBazarDbContext>();
     db.Database.Migrate();
-    app.Logger.LogInformation("Database migrations applied successfully.");
+    app.Logger.LogInformation("✅ Database migrations applied successfully.");
 }
 catch (Exception ex)
 {
-    app.Logger.LogError(ex, "Database migration failed. The app will start anyway — check your DB connection string.");
+    app.Logger.LogError(ex, "❌ Database migration failed.");
 }
 
-// ── WebSocket support ──────────────────────────────────────────────────────
+// ===============================
+// WebSockets
+// ===============================
 app.UseWebSockets();
 
-// ── Health check endpoint (must be early, before auth) ────────────────────
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+// ===============================
+// Health Check
+// ===============================
+app.MapGet("/health", () =>
+    Results.Ok(new
+    {
+        status = "healthy",
+        timestamp = DateTime.UtcNow
+    })
+);
 
-// ── HTTP pipeline ──────────────────────────────────────────────────────────
+// ===============================
+// Swagger UI
+// ===============================
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Apply the appropriate CORS policy based on environment
-if (app.Environment.IsProduction())
-    app.UseCors("AllowProduction");
-else
-    app.UseCors("AllowLocalhost");
+// ===============================
+// Static Files
+// ===============================
+app.UseStaticFiles();
 
+// ===============================
+// CORS
+// ===============================
+app.UseCors("AllowFrontend");
+
+// ===============================
+// Authentication
+// ===============================
 app.UseAuthentication();
 app.UseAuthorization();
 
-// WebSocket middleware (after authentication and authorization)
+// ===============================
+// WebSocket Middleware
+// ===============================
 app.UseMiddleware<WebSocketMiddleware>();
 
-// Serve static files from wwwroot (for uploaded images)
-app.UseStaticFiles();
-
+// ===============================
+// Controllers
+// ===============================
 app.MapControllers();
 
 app.Run();
