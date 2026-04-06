@@ -1,0 +1,15 @@
+# Exclude Windows build artifacts - these contain hardcoded Windows paths
+# that break the Linux Docker build
+Backend/GharBazar/bin/
+Backend/GharBazar/obj/
+Backend/GharBazar/out/
+Backend/GharBazar/.vs/
+
+# Exclude frontend (not needed for backend build)
+Frontend/
+
+# Exclude git and misc
+.git/
+.github/
+Artifacts/
+*.md
