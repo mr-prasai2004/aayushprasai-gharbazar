@@ -36,6 +36,7 @@ builder.Services.AddControllers();
 // Database
 // ===============================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
     ?? throw new Exception("❌ DefaultConnection missing in Railway variables");
 
 builder.Services.AddDbContext<GharBazarDbContext>(options =>
@@ -47,6 +48,7 @@ builder.Services.AddDbContext<GharBazarDbContext>(options =>
 // JWT Authentication
 // ===============================
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
+    ?? Environment.GetEnvironmentVariable("Jwt__SecretKey")
     ?? throw new Exception("❌ Jwt:SecretKey missing in Railway variables");
 
 var key = Encoding.ASCII.GetBytes(jwtSecretKey);
