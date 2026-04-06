@@ -27,7 +27,7 @@ builder.Services.AddControllers();
 
 // ── Database ───────────────────────────────────────────────────────────────
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found. Set the ConnectionStrings__DefaultConnection environment variable.");
+    ?? "Server=localhost;Database=ghar_bazar;User=root;Password=;";
 
 builder.Services.AddDbContext<GharBazarDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
@@ -36,7 +36,7 @@ builder.Services.AddDbContext<GharBazarDbContext>(options =>
 
 // ── Authentication & Authorization ─────────────────────────────────────────
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
-    ?? throw new InvalidOperationException("JWT SecretKey not configured. Set the Jwt__SecretKey environment variable.");
+    ?? "your-very-long-secret-key-for-jwt-that-should-be-at-least-32-characters-long";
 var key = Encoding.ASCII.GetBytes(jwtSecretKey);
 
 builder.Services.AddAuthentication(options =>
@@ -64,7 +64,6 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // ── CORS ───────────────────────────────────────────────────────────────────
-// Read allowed origins from env var (comma-separated) for production
 var allowedOriginsEnv = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS");
 var productionOrigins = allowedOriginsEnv?
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -115,24 +114,28 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// ── Auto-apply EF Core migrations on startup ───────────────────────────────
-using (var scope = app.Services.CreateScope())
+// ── Auto-apply EF Core migrations on startup (non-fatal) ──────────────────
+try
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<GharBazarDbContext>();
     db.Database.Migrate();
+    app.Logger.LogInformation("Database migrations applied successfully.");
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Database migration failed. The app will start anyway — check your DB connection string.");
 }
 
 // ── WebSocket support ──────────────────────────────────────────────────────
 app.UseWebSockets();
 
-// ── HTTP pipeline ──────────────────────────────────────────────────────────
+// ── Health check endpoint (must be early, before auth) ────────────────────
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
-// Always enable Swagger (useful in production for testing)
+// ── HTTP pipeline ──────────────────────────────────────────────────────────
 app.UseSwagger();
 app.UseSwaggerUI();
-
-// Health check endpoint (used by railway.toml healthcheckPath)
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 // Apply the appropriate CORS policy based on environment
 if (app.Environment.IsProduction())
