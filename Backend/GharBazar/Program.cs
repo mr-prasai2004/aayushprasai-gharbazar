@@ -119,8 +119,8 @@ var emailSettings = builder.Configuration
 // Explicit per-field env-var fallback (for Railway)
 if (string.IsNullOrWhiteSpace(emailSettings.SmtpHost))
     emailSettings.SmtpHost = Environment.GetEnvironmentVariable("EmailSettings__SmtpHost") ?? "";
-if (emailSettings.SmtpPort == 0)
-    int.TryParse(Environment.GetEnvironmentVariable("EmailSettings__SmtpPort"), out emailSettings.SmtpPort);
+if (emailSettings.SmtpPort == 0 && int.TryParse(Environment.GetEnvironmentVariable("EmailSettings__SmtpPort"), out var smtpPort))
+    emailSettings.SmtpPort = smtpPort;
 if (string.IsNullOrWhiteSpace(emailSettings.SenderName))
     emailSettings.SenderName = Environment.GetEnvironmentVariable("EmailSettings__SenderName") ?? "";
 if (string.IsNullOrWhiteSpace(emailSettings.SenderEmail))
