@@ -128,7 +128,8 @@ if (string.IsNullOrWhiteSpace(emailSettings.SenderEmail))
 if (string.IsNullOrWhiteSpace(emailSettings.Password))
     emailSettings.Password = Environment.GetEnvironmentVariable("EmailSettings__Password") ?? "";
 
-// Log email config at startup (mask password)
+if (string.IsNullOrWhiteSpace(emailSettings.ResendApiKey))
+    emailSettings.ResendApiKey = Environment.GetEnvironmentVariable("EmailSettings__ResendApiKey") ?? "";
 Console.WriteLine($"✅ EmailSettings loaded — Host: {emailSettings.SmtpHost}, Port: {emailSettings.SmtpPort}, From: {emailSettings.SenderEmail}, HasPassword: {!string.IsNullOrWhiteSpace(emailSettings.Password)}");
 
 builder.Services.AddSingleton(emailSettings);

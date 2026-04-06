@@ -1,16 +1,19 @@
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
-using MailKit;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace GharBazar.API.Services;
 
 public class EmailSettings
 {
-    public string SmtpHost { get; set; } = string.Empty;
-    public int SmtpPort { get; set; }
+    // Resend API (replaces SMTP — Railway blocks outbound SMTP ports)
+    public string ResendApiKey { get; set; } = string.Empty;
     public string SenderName { get; set; } = string.Empty;
     public string SenderEmail { get; set; } = string.Empty;
+
+    // Legacy SMTP fields kept for local dev fallback (unused in production)
+    public string SmtpHost { get; set; } = string.Empty;
+    public int SmtpPort { get; set; }
     public string Password { get; set; } = string.Empty;
 }
 
@@ -21,6 +24,7 @@ public interface IEmailService
 
 public class EmailService : IEmailService
 {
+    private static readonly HttpClient _http = new();
     private readonly EmailSettings _settings;
     private readonly ILogger<EmailService> _logger;
 
@@ -32,51 +36,44 @@ public class EmailService : IEmailService
 
     public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
     {
-        // Guard: bail early if SMTP is not configured
-        if (string.IsNullOrWhiteSpace(_settings.SmtpHost) || string.IsNullOrWhiteSpace(_settings.SenderEmail) || string.IsNullOrWhiteSpace(_settings.Password))
+        if (string.IsNullOrWhiteSpace(_settings.ResendApiKey))
         {
-            _logger.LogError("❌ Email NOT sent — EmailSettings are missing or empty. Host='{Host}', From='{From}', HasPassword={HasPwd}",
-                _settings.SmtpHost, _settings.SenderEmail, !string.IsNullOrWhiteSpace(_settings.Password));
+            _logger.LogError("❌ Email NOT sent — ResendApiKey is missing. Set EmailSettings__ResendApiKey in Railway variables.");
             return;
         }
 
         try
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
-            message.To.Add(MailboxAddress.Parse(toEmail));
-            message.Subject = subject;
+            var from = string.IsNullOrWhiteSpace(_settings.SenderName)
+                ? _settings.SenderEmail
+                : $"{_settings.SenderName} <{_settings.SenderEmail}>";
 
-            var builder = new BodyBuilder { HtmlBody = htmlBody };
-            message.Body = builder.ToMessageBody();
+            var payload = JsonSerializer.Serialize(new
+            {
+                from,
+                to = new[] { toEmail },
+                subject,
+                html = htmlBody
+            });
 
-            using var smtp = new SmtpClient();
-            smtp.Timeout = 15000; // 15 second timeout
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ResendApiKey);
+            request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-            _logger.LogInformation("📧 Connecting to SMTP {Host}:{Port} ...", _settings.SmtpHost, _settings.SmtpPort);
-            await smtp.ConnectAsync(_settings.SmtpHost, _settings.SmtpPort, SecureSocketOptions.StartTls);
+            _logger.LogInformation("📧 Sending email via Resend to {Email} — Subject: {Subject}", toEmail, subject);
 
-            _logger.LogInformation("📧 Authenticating as {From} ...", _settings.SenderEmail);
-            await smtp.AuthenticateAsync(_settings.SenderEmail, _settings.Password);
+            var response = await _http.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
 
-            await smtp.SendAsync(message);
-            await smtp.DisconnectAsync(true);
-
-            _logger.LogInformation("✅ Email sent to {Email} — Subject: {Subject}", toEmail, subject);
-        }
-        catch (SmtpCommandException ex)
-        {
-            _logger.LogError("❌ SMTP command failed sending to {Email}. StatusCode={Code}, Message={Msg}",
-                toEmail, ex.StatusCode, ex.Message);
-        }
-        catch (SmtpProtocolException ex)
-        {
-            _logger.LogError("❌ SMTP protocol error sending to {Email}: {Msg}", toEmail, ex.Message);
-        }
-        catch (MailKit.Security.AuthenticationException ex)
-        {
-            _logger.LogError("❌ SMTP authentication failed for {From}. Check App Password. Error: {Msg}",
-                _settings.SenderEmail, ex.Message);
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("✅ Email sent to {Email} via Resend. Response: {Body}", toEmail, body);
+            }
+            else
+            {
+                _logger.LogError("❌ Resend API error sending to {Email}. Status={Status} Body={Body}",
+                    toEmail, (int)response.StatusCode, body);
+            }
         }
         catch (Exception ex)
         {
