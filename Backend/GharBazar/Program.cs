@@ -80,17 +80,24 @@ builder.Services.AddAuthorization();
 // ===============================
 // CORS
 // ===============================
-var allowedOrigins = (Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")
-    ?? throw new Exception("❌ ALLOWED_ORIGINS missing in Railway variables"))
+var rawOrigins = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")
+    ?? throw new Exception("❌ ALLOWED_ORIGINS missing in Railway variables");
+
+var allowedOrigins = rawOrigins
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
     .Select(o => o.TrimEnd('/'))
     .ToArray();
+
+// Log at startup so Railway logs show the exact value loaded
+Console.WriteLine($"✅ CORS allowed origins ({allowedOrigins.Length}): {string.Join(" | ", allowedOrigins)}");
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
+        policy.SetIsOriginAllowed(origin =>
+                allowedOrigins.Any(allowed =>
+                    string.Equals(origin.TrimEnd('/'), allowed, StringComparison.OrdinalIgnoreCase)))
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
