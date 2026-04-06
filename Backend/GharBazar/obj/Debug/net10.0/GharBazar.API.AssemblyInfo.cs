@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GharBazar.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c156deac2e53e3b98c5ab06e2da7504b2ce5750f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ecd2bc71f2e8af7def416757004fb01a70eb5756")]
 [assembly: System.Reflection.AssemblyProductAttribute("GharBazar.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GharBazar.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

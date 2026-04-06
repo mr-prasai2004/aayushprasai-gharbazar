@@ -64,6 +64,14 @@ public class DocumentsController : ControllerBase
         };
 
         await _documentRepository.AddAsync(document);
+        
+        if (property.VerificationStatus != "pending")
+        {
+            property.VerificationStatus = "pending";
+            await _propertyRepository.UpdateAsync(property);
+            await _propertyRepository.SaveChangesAsync();
+        }
+        
         await _documentRepository.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetPropertyDocuments), new { propertyId }, MapToDocumentDto(document));
@@ -112,6 +120,14 @@ public class DocumentsController : ControllerBase
         }
 
         await _documentRepository.DeleteAsync(documentId);
+        
+        if (property != null && property.VerificationStatus != "pending")
+        {
+            property.VerificationStatus = "pending";
+            await _propertyRepository.UpdateAsync(property);
+            await _propertyRepository.SaveChangesAsync();
+        }
+
         await _documentRepository.SaveChangesAsync();
 
         return NoContent();
