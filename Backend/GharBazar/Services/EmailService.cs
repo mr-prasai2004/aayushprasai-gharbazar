@@ -1,6 +1,7 @@
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using MailKit;
 
 namespace GharBazar.API.Services;
 
@@ -31,6 +32,14 @@ public class EmailService : IEmailService
 
     public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
     {
+        // Guard: bail early if SMTP is not configured
+        if (string.IsNullOrWhiteSpace(_settings.SmtpHost) || string.IsNullOrWhiteSpace(_settings.SenderEmail) || string.IsNullOrWhiteSpace(_settings.Password))
+        {
+            _logger.LogError("❌ Email NOT sent — EmailSettings are missing or empty. Host='{Host}', From='{From}', HasPassword={HasPwd}",
+                _settings.SmtpHost, _settings.SenderEmail, !string.IsNullOrWhiteSpace(_settings.Password));
+            return;
+        }
+
         try
         {
             var message = new MimeMessage();
@@ -38,24 +47,41 @@ public class EmailService : IEmailService
             message.To.Add(MailboxAddress.Parse(toEmail));
             message.Subject = subject;
 
-            var builder = new BodyBuilder
-            {
-                HtmlBody = htmlBody
-            };
+            var builder = new BodyBuilder { HtmlBody = htmlBody };
             message.Body = builder.ToMessageBody();
 
             using var smtp = new SmtpClient();
+            smtp.Timeout = 15000; // 15 second timeout
+
+            _logger.LogInformation("📧 Connecting to SMTP {Host}:{Port} ...", _settings.SmtpHost, _settings.SmtpPort);
             await smtp.ConnectAsync(_settings.SmtpHost, _settings.SmtpPort, SecureSocketOptions.StartTls);
+
+            _logger.LogInformation("📧 Authenticating as {From} ...", _settings.SenderEmail);
             await smtp.AuthenticateAsync(_settings.SenderEmail, _settings.Password);
+
             await smtp.SendAsync(message);
             await smtp.DisconnectAsync(true);
 
-            _logger.LogInformation("Email sent successfully to {Email}", toEmail);
+            _logger.LogInformation("✅ Email sent to {Email} — Subject: {Subject}", toEmail, subject);
+        }
+        catch (SmtpCommandException ex)
+        {
+            _logger.LogError("❌ SMTP command failed sending to {Email}. StatusCode={Code}, Message={Msg}",
+                toEmail, ex.StatusCode, ex.Message);
+        }
+        catch (SmtpProtocolException ex)
+        {
+            _logger.LogError("❌ SMTP protocol error sending to {Email}: {Msg}", toEmail, ex.Message);
+        }
+        catch (MailKit.Security.AuthenticationException ex)
+        {
+            _logger.LogError("❌ SMTP authentication failed for {From}. Check App Password. Error: {Msg}",
+                _settings.SenderEmail, ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {Email}", toEmail);
-            // Don't throw — email failure should not break the main flow
+            _logger.LogError(ex, "❌ Failed to send email to {Email}. Type={Type} Inner={Inner}",
+                toEmail, ex.GetType().Name, ex.InnerException?.Message ?? "none");
         }
     }
 }

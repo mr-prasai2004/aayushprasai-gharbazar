@@ -275,7 +275,10 @@ public class AuthController : ControllerBase
         await _userRepository.UpdateAsync(user);
         await _userRepository.SaveChangesAsync();
 
-        var resetLink = $"http://localhost:5173/#/reset-password?token={resetToken}";
+        var frontendUrl = _configuration["FrontendUrl"]
+            ?? Environment.GetEnvironmentVariable("FRONTEND_URL")
+            ?? "http://localhost:5173";
+        var resetLink = $"{frontendUrl}/#/reset-password?token={resetToken}";
 
         // Send password reset email
         _ = _emailService.SendEmailAsync(
