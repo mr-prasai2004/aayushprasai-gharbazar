@@ -55,6 +55,9 @@ public class Property
     [Column("area_sqft")]
     public decimal? AreaSqft { get; set; }
 
+    [Column("listing_type")]
+    public string ListingType { get; set; } = "For Sale"; // For Sale, For Rent, Lease
+
     [Column("status")]
     public string Status { get; set; } = "Pending"; // For Sale, For Rent, Sold, Leased, Pending
 

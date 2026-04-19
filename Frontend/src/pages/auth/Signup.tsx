@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import { UserRole } from '../../types';
+import { useToast } from '../../components/Toast';
 
 export const Signup: React.FC = () => {
+    const toast = useToast();
     const [role, setRole] = useState<UserRole>(UserRole.BUYER);
     const [fullName, setFullName] = useState('');
     const [userName, setUserName] = useState('');
@@ -79,7 +81,7 @@ export const Signup: React.FC = () => {
                 role: data.role,
             });
 
-            alert('Email verified and Account created successfully!');
+            toast.success('Email verified — welcome to Ghar Bazar! 🎉');
 
             // Navigate to appropriate dashboard
             if (data.role === UserRole.BUYER) navigate('/dashboard/buyer');

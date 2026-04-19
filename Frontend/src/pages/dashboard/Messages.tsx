@@ -3,6 +3,7 @@ import { messagesApi } from '../../services/api';
 import { Send, MessageSquare, AlertCircle, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../components/Toast';
 
 interface Message {
     messageId: string;
@@ -29,6 +30,7 @@ interface Conversation {
 
 export const Messages: React.FC = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [selectedUser, setSelectedUser] = useState<string | null>(null);
     const [selectedUserName, setSelectedUserName] = useState<string>('');
@@ -161,7 +163,7 @@ export const Messages: React.FC = () => {
             console.error('Failed to send message', error);
             // Remove the optimistic temp message on failure
             setMessages(prev => prev.filter(m => m.messageId !== tempMessage.messageId));
-            alert('Failed to send message. Please try again.');
+            toast.error('Failed to send message. Please try again.');
         } finally {
             setSending(false);
         }

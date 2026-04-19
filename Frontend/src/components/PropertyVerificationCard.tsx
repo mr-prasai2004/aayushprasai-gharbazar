@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle, XCircle, FileText, MapPin, DollarSign, Home, X, AlertCircle } from 'lucide-react';
 import { Property } from '../types';
 import { documentsApi } from '../services/api';
+import { useToast } from './Toast';
 
 interface PropertyVerificationCardProps {
   property: Property;
@@ -12,10 +13,12 @@ export const PropertyVerificationCard: React.FC<PropertyVerificationCardProps> =
   property,
   onVerify
 }) => {
+  const toast = useToast();
   const [showDecisionModal, setShowDecisionModal] = useState(false);
   const [decision, setDecision] = useState<'verified' | 'rejected' | null>(null);
   const [notes, setNotes] = useState('');
   const [localDocs, setLocalDocs] = useState<any[]>(property.documents || []);
+  const [modalError, setModalError] = useState('');
 
   const handleDocVerifyToggle = async (docId: string, currentStatus: boolean) => {
     try {
@@ -23,19 +26,20 @@ export const PropertyVerificationCard: React.FC<PropertyVerificationCardProps> =
       await documentsApi.verify(docId, { verified: newStatus, verificationNotes: newStatus ? '' : 'Rejected during admin review' });
       setLocalDocs(docs => docs.map(d => d.documentId === docId ? { ...d, verified: newStatus } : d));
     } catch (err) {
-      alert('Failed to update document verification status');
+      toast.error('Failed to update document verification status');
     }
   };
 
   const handleSubmitDecision = () => {
     if (!decision) {
-      alert('Please select a decision');
+      setModalError('Please select a decision');
       return;
     }
     if (decision === 'rejected' && !notes.trim()) {
-      alert('Please provide rejection reason');
+      setModalError('Please provide a rejection reason');
       return;
     }
+    setModalError('');
     onVerify(property.propertyId, decision, notes);
     setShowDecisionModal(false);
     setDecision(null);
@@ -269,6 +273,12 @@ export const PropertyVerificationCard: React.FC<PropertyVerificationCardProps> =
                   rows={3}
                 />
               </div>
+            )}
+
+            {modalError && (
+              <p className="text-sm text-red-600 flex items-center gap-1 mb-3">
+                <AlertCircle className="h-4 w-4" />{modalError}
+              </p>
             )}
 
             <div className="flex gap-3 pt-4 border-t border-gray-200">

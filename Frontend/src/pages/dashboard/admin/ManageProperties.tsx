@@ -5,10 +5,13 @@ import { propertiesApi } from '../../../services/api';
 import { Trash2, X, Eye, User as UserIcon } from 'lucide-react';
 import { PropertyVerificationCard } from '../../../components/PropertyVerificationCard';
 import { usersApi } from '../../../services/api';
+import { useToast } from '../../../components/Toast';
 
 export const AdminManageProperties: React.FC = () => {
+    const toast = useToast();
     const [props, setProps] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     // Load all properties from API on mount
     useEffect(() => {
@@ -42,35 +45,39 @@ export const AdminManageProperties: React.FC = () => {
             setOwnerData(user);
         } catch (err) {
             console.error('Failed to load owner profile', err);
-            alert('Failed to load owner profile');
+            toast.error('Failed to load owner profile');
         } finally {
             setLoadingOwner(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('Delete property?')) {
-            try {
-                await propertiesApi.delete(id);
-                setProps(props.filter(p => p.propertyId !== id));
-            } catch (err) {
-                console.error('Failed to delete property', err);
-                alert('Failed to delete property');
-            }
+        if (confirmDeleteId !== id) {
+            setConfirmDeleteId(id);
+            return;
+        }
+        setConfirmDeleteId(null);
+        try {
+            await propertiesApi.delete(id);
+            setProps(props.filter(p => p.propertyId !== id));
+            toast.success('Property deleted.');
+        } catch (err) {
+            console.error('Failed to delete property', err);
+            toast.error('Failed to delete property');
         }
     };
 
     const handlePropertyVerification = async (propertyId: string, status: 'verified' | 'rejected', notes: string) => {
         try {
             await propertiesApi.verify(propertyId, { verificationStatus: status, verificationNotes: notes });
-            alert(`Property ${status === 'verified' ? 'verified' : 'rejected'} successfully!`);
+            toast.success(`Property ${status === 'verified' ? 'verified' : 'rejected'} successfully!`);
             
             // Refresh list with updated status
             setProps(props.map(p => p.propertyId === propertyId ? { ...p, verificationStatus: status } : p));
             setViewingProperty(null);
         } catch (err) {
             console.error('Failed to verify property', err);
-            alert('Failed to verify property');
+            toast.error('Failed to verify property');
         }
     };
 
@@ -117,7 +124,14 @@ export const AdminManageProperties: React.FC = () => {
                                     <td className="px-6 py-3 flex gap-2">
                                         <button onClick={() => setViewingProperty(p)} className="text-gray-400 hover:text-green-600 p-1" title="View Property & Verify"><Eye className="h-4 w-4" /></button>
                                         <button onClick={() => handleViewOwner(p.ownerId)} className="text-gray-400 hover:text-blue-600 p-1" title="View Owner Profile"><UserIcon className="h-4 w-4" /></button>
-                                        <button onClick={() => handleDelete(p.propertyId)} className="text-gray-400 hover:text-red-600 p-1" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                                        {confirmDeleteId === p.propertyId ? (
+                                            <span className="flex items-center gap-1">
+                                                <button onClick={() => handleDelete(p.propertyId)} className="text-xs font-bold text-red-600 hover:underline">Yes</button>
+                                                <button onClick={() => setConfirmDeleteId(null)} className="text-xs text-gray-500 hover:underline">No</button>
+                                            </span>
+                                        ) : (
+                                            <button onClick={() => handleDelete(p.propertyId)} className="text-gray-400 hover:text-red-600 p-1" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

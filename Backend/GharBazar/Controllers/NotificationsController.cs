@@ -85,7 +85,7 @@ public class NotificationsController : ControllerBase
 
         if (notification.OwnerId != userId && !User.IsInRole("ADMIN"))
         {
-            return Forbid("You don't have permission to update this notification");
+            return StatusCode(403, "You don't have permission to update this notification");
         }
 
         notification.ReadAt = DateTime.UtcNow;
@@ -112,7 +112,7 @@ public class NotificationsController : ControllerBase
 
         if (notification.OwnerId != userId && !User.IsInRole("ADMIN"))
         {
-            return Forbid("You don't have permission to delete this notification");
+            return StatusCode(403, "You don't have permission to delete this notification");
         }
 
         await _notificationRepository.DeleteAsync(id);

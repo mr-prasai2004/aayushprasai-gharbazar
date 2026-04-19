@@ -105,6 +105,7 @@ public class PropertiesController : ControllerBase
                 Title = request.Title,
                 Description = request.Description,
                 PropertyType = request.PropertyType,
+                ListingType = request.ListingType ?? "For Sale",
                 Price = request.Price,
                 Location = request.Location,
                 City = request.City,
@@ -266,7 +267,8 @@ public class PropertiesController : ControllerBase
 
         if (property.VerificationStatus == "verified")
         {
-            property.Status = "For Sale";
+            // Restore the seller's originally chosen listing type instead of hardcoding "For Sale"
+            property.Status = !string.IsNullOrEmpty(property.ListingType) ? property.ListingType : "For Sale";
         }
 
         property.UpdatedAt = DateTime.UtcNow;
@@ -300,6 +302,7 @@ public class PropertiesController : ControllerBase
             Title = property.Title,
             Description = property.Description ?? "",
             PropertyType = property.PropertyType,
+            ListingType = property.ListingType,
             Price = property.Price,
             Location = property.Location,
             City = property.City,

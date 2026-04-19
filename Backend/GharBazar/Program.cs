@@ -80,12 +80,22 @@ builder.Services.AddAuthorization();
 // ===============================
 // CORS
 // ===============================
-var rawOrigins = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")
-    ?? throw new Exception("❌ ALLOWED_ORIGINS missing in Railway variables");
+var originString = builder.Configuration["AllowedOrigins"] 
+    ?? Environment.GetEnvironmentVariable("ALLOWED_ORIGINS") 
+    ?? "";
 
-var allowedOrigins = rawOrigins
+var allowedOriginsList = originString
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .ToList();
+
+// Always allow standard frontends to prevent CORS issues
+allowedOriginsList.Add("http://localhost:5173");
+allowedOriginsList.Add("http://localhost:5000");
+allowedOriginsList.Add("https://gharbaazaar.netlify.app");
+
+var allowedOrigins = allowedOriginsList
     .Select(o => o.TrimEnd('/'))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
     .ToArray();
 
 // Log at startup so Railway logs show the exact value loaded

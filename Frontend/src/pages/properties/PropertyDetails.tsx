@@ -63,8 +63,8 @@ export const PropertyDetails: React.FC = () => {
                     if (ownerId === userId) {
                         try {
                             const bookings = await tourBookingsApi.getSellerBookings();
-                            const propertyBookings = bookings.filter((b: any) => 
-                                (b.propertyId === id || b.PropertyId === id) && 
+                            const propertyBookings = bookings.filter((b: any) =>
+                                (b.propertyId === id || b.PropertyId === id) &&
                                 (b.status !== 'Cancelled' && b.Status !== 'Cancelled')
                             );
                             setSellerBookings(propertyBookings);
@@ -270,7 +270,7 @@ export const PropertyDetails: React.FC = () => {
 
     const handleContactButtonClick = () => {
         if (!isAuthenticated) {
-            alert('Please log in to contact the seller');
+            addNotification('Please log in to contact the seller', 'error');
             navigate('/login');
         } else {
             setShowContactModal(true);
@@ -279,7 +279,7 @@ export const PropertyDetails: React.FC = () => {
 
     const handleTourButtonClick = () => {
         if (!isAuthenticated) {
-            alert('Please log in to schedule a tour');
+            addNotification('Please log in to schedule a tour', 'error');
             navigate('/login');
         } else {
             setShowTourModal(true);
@@ -308,11 +308,16 @@ export const PropertyDetails: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
                         <div className="max-w-7xl mx-auto w-full px-4 md:px-6 pb-6 md:pb-8 text-white">
                             <div className="flex gap-2 mb-3 md:mb-4">
-                                <span className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${property.status === 'For Sale' ? 'bg-green-500' : 'bg-blue-500'}`}>{property.status}</span>
+                                <span className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${
+                                    (property.listingType || property.status) === 'For Sale' ? 'bg-green-500' :
+                                    (property.listingType || property.status) === 'For Rent' ? 'bg-blue-500' :
+                                    (property.listingType || property.status) === 'Lease' ? 'bg-purple-500' :
+                                    'bg-amber-500'
+                                }`}>{property.listingType || property.status}</span>
                                 <span className="px-3 py-1 rounded-full text-xs md:text-sm font-semibold bg-white/20 backdrop-blur-sm">{property.propertyType}</span>
                             </div>
                             <h1 className="text-2xl md:text-4xl font-bold mb-1 md:mb-2">{property.title}</h1>
-                            <p className="text-xl md:text-3xl font-bold text-primary-300 mb-3 md:mb-4">${property.price.toLocaleString()}</p>
+                            <p className="text-xl md:text-3xl font-bold text-primary-300 mb-3 md:mb-4">NRP {property.price.toLocaleString()}</p>
                             <div className="flex items-center text-gray-200">
                                 <MapPin className="h-5 w-5 mr-2" /> {property.location}
                             </div>
@@ -325,7 +330,43 @@ export const PropertyDetails: React.FC = () => {
                         {/* Description */}
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">Property Details</h2>
-                            <p className="text-gray-600 leading-relaxed">{property.description}</p>
+                            <p className="text-gray-600 leading-relaxed mb-6">{property.description}</p>
+
+                            {/* Key Property Info Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Property Type</p>
+                                    <p className="text-gray-900 font-semibold text-sm">{property.propertyType || '—'}</p>
+                                </div>
+                                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Listing Type</p>
+                                    <p className={`font-semibold text-sm ${
+                                        (property.listingType || property.status) === 'For Sale' ? 'text-green-600' :
+                                        (property.listingType || property.status) === 'For Rent' ? 'text-blue-600' :
+                                        (property.listingType || property.status) === 'Lease' ? 'text-purple-600' :
+                                        'text-amber-600'
+                                    }`}>{property.listingType || property.status || '—'}</p>
+                                </div>
+                                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Price</p>
+                                    <p className="text-gray-900 font-semibold text-sm">NRP {property.price?.toLocaleString()}</p>
+                                </div>
+                                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">City</p>
+                                    <p className="text-gray-900 font-semibold text-sm">{property.city || property.location || '—'}</p>
+                                </div>
+                                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Listed Date</p>
+                                    <p className="text-gray-900 font-semibold text-sm">{property.listedDate ? new Date(property.listedDate).toLocaleDateString() : '—'}</p>
+                                </div>
+                                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Verification</p>
+                                    <p className={`font-semibold text-sm capitalize ${property.verificationStatus === 'verified' ? 'text-green-600' :
+                                        property.verificationStatus === 'rejected' ? 'text-red-500' :
+                                            'text-amber-500'
+                                        }`}>{property.verificationStatus || 'pending'}</p>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Amenities */}
@@ -342,10 +383,10 @@ export const PropertyDetails: React.FC = () => {
                         {/* Location Map */}
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">Location</h2>
-                            <PropertyMap 
-                                latitude={property.latitude} 
-                                longitude={property.longitude} 
-                                locationText={property.location} 
+                            <PropertyMap
+                                latitude={property.latitude}
+                                longitude={property.longitude}
+                                locationText={property.location}
                             />
                         </div>
 

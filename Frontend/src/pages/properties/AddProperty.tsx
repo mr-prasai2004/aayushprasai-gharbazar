@@ -5,6 +5,7 @@ import { UserRole } from '../../types';
 import { Upload, X, CheckCircle, Loader2, FileText, AlertCircle } from 'lucide-react';
 import { propertiesApi, uploadApi } from '../../services/api';
 import { MapPicker } from '../../components/map/MapPicker';
+import { useToast } from '../../components/Toast';
 
 const DOCUMENT_TYPES = [
     'Lalpurja (Land Ownership Certificate)',
@@ -28,6 +29,7 @@ interface UploadedDoc {
 
 export const AddProperty: React.FC = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [step, setStep] = useState(1);
     const [uploading, setUploading] = useState(false);
     const [docUploading, setDocUploading] = useState(false);
@@ -68,6 +70,13 @@ export const AddProperty: React.FC = () => {
         else navigate(-1);
     };
 
+    // Maps display labels to clean backend values
+    const getListingTypeValue = (displayValue: string): string => {
+        if (displayValue.includes('Rent')) return 'For Rent';
+        if (displayValue.includes('Lease')) return 'Lease';
+        return 'For Sale';
+    };
+
     const handleSubmit = async () => {
         const documents = uploadedDocs.map(doc => ({
             documentType: doc.document_type,
@@ -85,6 +94,7 @@ export const AddProperty: React.FC = () => {
             title: formData.title || 'Untitled Property',
             description: formData.description || '',
             propertyType: formData.propertyType,
+            listingType: getListingTypeValue(formData.listingType), // seller's intent: For Sale / For Rent / Lease
             price: Number(formData.price) || 0,
             location: formData.address || '',
             city: '',
@@ -92,22 +102,20 @@ export const AddProperty: React.FC = () => {
             bedrooms: Number(formData.bedrooms) || 0,
             bathrooms: Number(formData.bathrooms) || 0,
             areaSqft: Number(formData.area) || 0,
-            status: 'Pending',
             latitude: formData.latitude,
             longitude: formData.longitude,
             amenities: formData.amenities || [],
             documents: documents,
             images: images,
-            verificationStatus: 'pending'
         };
 
         try {
             await propertiesApi.create(newProperty);
-            alert('Property submitted for review! Admin approval required before listing.');
+            toast.success('Property submitted for review! Admin approval required before listing.');
             navigate('/dashboard/listings');
         } catch (err) {
             console.error('Failed to save property', err);
-            alert('Failed to save property. Please try again.');
+            toast.error('Failed to save property. Please try again.');
         }
     };
 
@@ -119,7 +127,7 @@ export const AddProperty: React.FC = () => {
 
     const handleDocUpload = async () => {
         if (!selectedDocType || !selectedDocFile) {
-            alert('Please select a document type and file');
+            toast.warning('Please select a document type and file');
             return;
         }
         try {
@@ -135,7 +143,7 @@ export const AddProperty: React.FC = () => {
             setSelectedDocFile(null);
         } catch (err) {
             console.error('Failed to upload document', err);
-            alert('Failed to upload document. Please try again.');
+            toast.error('Failed to upload document. Please try again.');
         } finally {
             setDocUploading(false);
         }
@@ -168,13 +176,13 @@ export const AddProperty: React.FC = () => {
         Array.from(files).forEach((file: File) => {
             // Validate file type
             if (!file.type.startsWith('image/')) {
-                alert('Please select an image file');
+                toast.error('Please select an image file');
                 return;
             }
 
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                alert('Image size should be less than 5MB');
+                toast.error('Image size should be less than 5MB');
                 return;
             }
 
@@ -190,7 +198,7 @@ export const AddProperty: React.FC = () => {
             setFormData(prev => ({ ...prev, images: [...prev.images, ...urls] }));
         } catch (error) {
             console.error('Failed to upload images', error);
-            alert('Failed to upload images. Please try again.');
+            toast.error('Failed to upload images. Please try again.');
         } finally {
             setUploading(false);
         }
@@ -218,7 +226,7 @@ export const AddProperty: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Pin Location on Map</label>
                             <p className="text-xs text-gray-500 mb-2">Click on the map to accurately place your property.</p>
-                            <MapPicker 
+                            <MapPicker
                                 initialLatitude={formData.latitude}
                                 initialLongitude={formData.longitude}
                                 onLocationSelect={(lat, lng) => setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))}

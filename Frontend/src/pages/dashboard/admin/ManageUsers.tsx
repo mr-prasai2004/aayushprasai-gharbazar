@@ -3,6 +3,7 @@ import { DashboardLayout } from '../../../components/layout';
 import { UserRole } from '../../../types';
 import { Search, Trash2, User, Loader2 } from 'lucide-react';
 import { usersApi } from '../../../services/api';
+import { useToast } from '../../../components/Toast';
 
 interface UserData {
     userId: string;
@@ -16,10 +17,12 @@ interface UserData {
 }
 
 export const ManageUsers: React.FC = () => {
+    const toast = useToast();
     const [users, setUsers] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchUsers();
@@ -40,14 +43,18 @@ export const ManageUsers: React.FC = () => {
     };
 
     const handleDelete = async (userId: string) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
-            try {
-                await usersApi.delete(userId);
-                setUsers(prev => prev.filter(u => u.userId !== userId));
-            } catch (err) {
-                console.error('Failed to delete user', err);
-                alert('Failed to delete user');
-            }
+        if (confirmDeleteId !== userId) {
+            setConfirmDeleteId(userId);
+            return;
+        }
+        setConfirmDeleteId(null);
+        try {
+            await usersApi.delete(userId);
+            setUsers(prev => prev.filter(u => u.userId !== userId));
+            toast.success('User deleted.');
+        } catch (err) {
+            console.error('Failed to delete user', err);
+            toast.error('Failed to delete user');
         }
     };
 
@@ -152,13 +159,20 @@ export const ManageUsers: React.FC = () => {
                                                 {new Date(u.createdAt).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-3">
-                                                <button
-                                                    onClick={() => handleDelete(u.userId)}
-                                                    className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition"
-                                                    title="Delete user"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                {confirmDeleteId === u.userId ? (
+                                                    <span className="flex items-center gap-1">
+                                                        <button onClick={() => handleDelete(u.userId)} className="text-xs font-bold text-red-600 hover:underline">Yes</button>
+                                                        <button onClick={() => setConfirmDeleteId(null)} className="text-xs text-gray-500 hover:underline">No</button>
+                                                    </span>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleDelete(u.userId)}
+                                                        className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition"
+                                                        title="Delete user"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

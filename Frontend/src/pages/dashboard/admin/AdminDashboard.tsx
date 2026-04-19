@@ -6,8 +6,10 @@ import { CheckCircle, XCircle, Eye, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { PropertyVerificationCard } from '../../../components/PropertyVerificationCard';
 import { propertiesApi, usersApi, authApi } from '../../../services/api';
+import { useToast } from '../../../components/Toast';
 
 export const AdminDashboard: React.FC = () => {
+    const toast = useToast();
     const [pendingProperties, setPendingProperties] = useState<any[]>([]);
     const [verificationProperties, setVerificationProperties] = useState<any[]>([]);
     const [allProperties, setAllProperties] = useState<any[]>([]);
@@ -17,12 +19,14 @@ export const AdminDashboard: React.FC = () => {
     const [showAddAdminModal, setShowAddAdminModal] = useState(false);
     const [selectedProperty, setSelectedProperty] = useState<any>(null);
     const [showPropertyModal, setShowPropertyModal] = useState(false);
+    const [confirmRejectId, setConfirmRejectId] = useState<string | null>(null);
     const [adminFormData, setAdminFormData] = useState({
         email: '',
         password: '',
         fullName: '',
         userName: '',
     });
+    const [adminFormError, setAdminFormError] = useState('');
 
     const navigate = useNavigate();
 
@@ -88,73 +92,55 @@ export const AdminDashboard: React.FC = () => {
     const handleApprove = async (propertyId: string) => {
         try {
             await propertiesApi.verify(propertyId, { verificationStatus: 'verified' });
-
-            // Send notification to owner
-            const property = pendingProperties.find(p => p.propertyId === propertyId);
-            if (property) {
-                // We should add a new notification API call for creating notifications?
-                // Or maybe the backend automatically sends notification on verification?
-                // The current backend VerifyProperty does NOT create notification.
-                // Assuming we can skip explicit notification creation from frontend for now or add it later.
-                // Or use notificationsApi if we add 'create' method.
-            }
-
-            alert('Property approved and listed!');
-            // Refresh list
+            toast.success('Property approved and listed!');
             const updated = pendingProperties.filter(p => p.propertyId !== propertyId);
             setPendingProperties(updated);
             setVerificationProperties(updated);
         } catch (err) {
             console.error('Failed to approve property', err);
-            alert('Failed to approve property');
+            toast.error('Failed to approve property');
         }
     };
 
     const handleReject = async (propertyId: string) => {
-        if (window.confirm("Reject this property? It will be deleted.")) {
-            try {
-                await propertiesApi.delete(propertyId);
-
-                const updated = pendingProperties.filter(p => p.propertyId !== propertyId);
-                setPendingProperties(updated);
-                setVerificationProperties(updated);
-                alert('Property rejected and deleted.');
-            } catch (err) {
-                console.error('Failed to reject property', err);
-                alert('Failed to reject property: ' + err);
-            }
+        if (confirmRejectId !== propertyId) {
+            setConfirmRejectId(propertyId);
+            return;
+        }
+        setConfirmRejectId(null);
+        try {
+            await propertiesApi.delete(propertyId);
+            const updated = pendingProperties.filter(p => p.propertyId !== propertyId);
+            setPendingProperties(updated);
+            setVerificationProperties(updated);
+            toast.success('Property rejected and deleted.');
+        } catch (err) {
+            console.error('Failed to reject property', err);
+            toast.error('Failed to reject property');
         }
     };
 
     const handlePropertyVerification = async (propertyId: string, status: 'verified' | 'rejected', notes: string) => {
         try {
             await propertiesApi.verify(propertyId, { verificationStatus: status, verificationNotes: notes });
-            alert(`Property ${status === 'verified' ? 'verified' : 'rejected'} successfully!`);
+            toast.success(`Property ${status === 'verified' ? 'verified' : 'rejected'} successfully!`);
 
             // Refresh list
-            if (status === 'verified') {
-                const updated = pendingProperties.filter(p => p.propertyId !== propertyId);
-                setPendingProperties(updated);
-                setVerificationProperties(updated);
-            } else {
-                // If rejected, does it stay in pending or get deleted?
-                // Backend just updates status.
-                // Frontend should probably remove it from "Pending" list if we treat "verified/rejected" as done.
-                const updated = pendingProperties.filter(p => p.propertyId !== propertyId);
-                setPendingProperties(updated);
-                setVerificationProperties(updated);
-            }
+            const updated = pendingProperties.filter(p => p.propertyId !== propertyId);
+            setPendingProperties(updated);
+            setVerificationProperties(updated);
         } catch (err) {
             console.error('Failed to verify property', err);
-            alert('Failed to verify property');
+            toast.error('Failed to verify property');
         }
     };
 
     const handleAddAdmin = async () => {
         if (!adminFormData.email || !adminFormData.password || !adminFormData.fullName || !adminFormData.userName) {
-            alert('Please fill in all fields');
+            setAdminFormError('Please fill in all fields');
             return;
         }
+        setAdminFormError('');
         try {
             await authApi.register({
                 userName: adminFormData.userName,
@@ -163,11 +149,11 @@ export const AdminDashboard: React.FC = () => {
                 fullName: adminFormData.fullName,
                 role: UserRole.ADMIN,
             });
-            alert(`Admin account created for ${adminFormData.fullName} (${adminFormData.email}). They will receive a verification email.`);
+            toast.success(`Admin account created for ${adminFormData.fullName}. They will receive a verification email.`);
             setAdminFormData({ email: '', password: '', fullName: '', userName: '' });
             setShowAddAdminModal(false);
         } catch (err: any) {
-            alert(`Failed to create admin: ${err.message}`);
+            setAdminFormError(`Failed to create admin: ${err.message}`);
         }
     };
 
@@ -270,7 +256,14 @@ export const AdminDashboard: React.FC = () => {
                                                 <td className="px-6 py-3 flex gap-2">
                                                     <button onClick={() => { setSelectedProperty(p); setShowPropertyModal(true); }} className="text-gray-400 hover:text-blue-600 p-1" title="View"><Eye className="h-4 w-4" /></button>
                                                     <button onClick={() => handleApprove(p.propertyId)} className="text-gray-400 hover:text-green-600 p-1" title="Approve"><CheckCircle className="h-4 w-4" /></button>
-                                                    <button onClick={() => handleReject(p.propertyId)} className="text-gray-400 hover:text-red-600 p-1" title="Reject"><XCircle className="h-4 w-4" /></button>
+                                                    {confirmRejectId === p.propertyId ? (
+                                                        <span className="flex items-center gap-1">
+                                                            <button onClick={() => handleReject(p.propertyId)} className="text-xs font-bold text-red-600 hover:underline">Reject</button>
+                                                            <button onClick={() => setConfirmRejectId(null)} className="text-xs text-gray-500 hover:underline">No</button>
+                                                        </span>
+                                                    ) : (
+                                                        <button onClick={() => handleReject(p.propertyId)} className="text-gray-400 hover:text-red-600 p-1" title="Reject"><XCircle className="h-4 w-4" /></button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -390,6 +383,10 @@ export const AdminDashboard: React.FC = () => {
                                 />
                             </div>
                         </div>
+
+                        {adminFormError && (
+                            <p className="text-sm text-red-600 mt-2">{adminFormError}</p>
+                        )}
 
                         <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
                             <button

@@ -3,11 +3,14 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { UserRole } from '../../types';
 import { Calendar, MapPin, User, Clock, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { tourBookingsApi } from '../../services/api';
+import { useToast } from '../../components/Toast';
 
 export const Bookings: React.FC = () => {
+    const toast = useToast();
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [cancelling, setCancelling] = useState<string | null>(null);
+    const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchBookings = async () => {
@@ -24,13 +27,18 @@ export const Bookings: React.FC = () => {
     }, []);
 
     const handleCancel = async (bookingId: string) => {
-        if (!window.confirm('Are you sure you want to cancel this tour?')) return;
+        if (confirmCancel !== bookingId) {
+            setConfirmCancel(bookingId);
+            return;
+        }
+        setConfirmCancel(null);
         setCancelling(bookingId);
         try {
             await tourBookingsApi.cancel(bookingId);
             setBookings(prev => prev.map(b => b.bookingId === bookingId ? { ...b, status: 'Cancelled' } : b));
+            toast.success('Tour booking cancelled.');
         } catch (err) {
-            alert('Failed to cancel booking. Please try again.');
+            toast.error('Failed to cancel booking. Please try again.');
         } finally {
             setCancelling(null);
         }
@@ -137,13 +145,23 @@ export const Bookings: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             {booking.status === 'Pending' ? (
-                                                <button
-                                                    onClick={() => handleCancel(booking.bookingId)}
-                                                    disabled={cancelling === booking.bookingId}
-                                                    className="text-red-600 hover:text-red-700 font-medium text-sm disabled:opacity-50"
-                                                >
-                                                    {cancelling === booking.bookingId ? 'Cancelling...' : 'Cancel Tour'}
-                                                </button>
+                                                <div className="flex flex-col gap-1">
+                                                    {confirmCancel === booking.bookingId ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-gray-600">Confirm cancel?</span>
+                                                            <button onClick={() => handleCancel(booking.bookingId)} className="text-xs text-red-600 font-semibold hover:underline">Yes</button>
+                                                            <button onClick={() => setConfirmCancel(null)} className="text-xs text-gray-500 hover:underline">No</button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleCancel(booking.bookingId)}
+                                                            disabled={cancelling === booking.bookingId}
+                                                            className="text-red-600 hover:text-red-700 font-medium text-sm disabled:opacity-50"
+                                                        >
+                                                            {cancelling === booking.bookingId ? 'Cancelling...' : 'Cancel Tour'}
+                                                        </button>
+                                                    )}
+                                                </div>
                                             ) : (
                                                 <span className="text-gray-400 text-xs">—</span>
                                             )}

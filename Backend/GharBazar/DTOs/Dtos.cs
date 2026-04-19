@@ -85,6 +85,7 @@ public class PropertyCreateRequest
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string PropertyType { get; set; } = "House";
+    public string ListingType { get; set; } = "For Sale"; // For Sale, For Rent, Lease
     public decimal Price { get; set; }
     public string Location { get; set; } = string.Empty;
     public string? City { get; set; }
@@ -133,6 +134,7 @@ public class PropertyDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string PropertyType { get; set; } = string.Empty;
+    public string ListingType { get; set; } = string.Empty;
     public decimal Price { get; set; }
     public string Location { get; set; } = string.Empty;
     public string? City { get; set; }

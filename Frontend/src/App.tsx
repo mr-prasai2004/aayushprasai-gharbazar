@@ -1,4 +1,5 @@
 import React from 'react';
+import { ToastProvider } from './components/Toast';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { Home } from './pages/Home.jsx';
@@ -17,6 +18,7 @@ import { UserRole } from '../types.ts';
 
 const App = () => {
   return (
+    <ToastProvider>
     <HashRouter>
       <Routes>
         {/* Public Routes */}
@@ -66,6 +68,7 @@ const App = () => {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </HashRouter>
+    </ToastProvider>
   );
 };
 

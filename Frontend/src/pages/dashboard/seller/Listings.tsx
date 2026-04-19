@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Edit2, Trash2, FileText, CheckCircle2 } from 'lucide-react';
+import { Eye, Edit2, Trash2, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { PropertyDocumentUpload } from "../../../components/PropertyDocumentUpload";
 
 interface Props {
@@ -86,7 +86,7 @@ export const Listings: React.FC<Props> = ({ listings, onEdit, onDelete, onView, 
             <tbody className="divide-y divide-gray-100">
               {listings.map((item) => (
                 <React.Fragment key={item.propertyId}>
-                  <tr className="hover:bg-gray-50">
+                  <tr className={`hover:bg-gray-50 ${item.verificationStatus === 'rejected' ? 'bg-red-50/40' : ''}`}>
                     <td className="px-6 py-3 font-medium flex items-center gap-3 min-w-[200px]">
                       <img src={item.images?.[0]?.imageUrl || 'https://placehold.co/100x100'} alt="" className="w-10 h-10 rounded object-cover" />
                       <div>
@@ -121,15 +121,27 @@ export const Listings: React.FC<Props> = ({ listings, onEdit, onDelete, onView, 
                           )}
                         </div>
                       ) : (
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusStyle(item.status)}`}>
-                          {item.status}
-                          {item.verificationStatus === 'pending' && (
-                            <span className="ml-1 text-gray-400">(Awaiting admin)</span>
-                          )}
+                        <div className="space-y-1">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusStyle(item.status)}`}>
+                            {item.status}
+                            {item.verificationStatus === 'pending' && (
+                              <span className="ml-1 text-gray-400">(Awaiting admin)</span>
+                            )}
+                          </span>
                           {item.verificationStatus === 'rejected' && (
-                            <span className="ml-1 text-red-400">(Rejected)</span>
+                            <div className="flex items-start gap-1 mt-1 p-2 bg-red-50 border border-red-200 rounded-lg max-w-xs">
+                              <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-xs font-semibold text-red-700">Rejected by Admin</p>
+                                {item.verificationNotes ? (
+                                  <p className="text-xs text-red-600 mt-0.5">{item.verificationNotes}</p>
+                                ) : (
+                                  <p className="text-xs text-red-400 italic mt-0.5">No reason provided</p>
+                                )}
+                              </div>
+                            </div>
                           )}
-                        </span>
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-3">

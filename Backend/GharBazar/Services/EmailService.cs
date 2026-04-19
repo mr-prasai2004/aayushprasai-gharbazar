@@ -8,6 +8,7 @@ public class EmailSettings
 {
     // Resend API (replaces SMTP — Railway blocks outbound SMTP ports)
     public string ResendApiKey { get; set; } = string.Empty;
+    public string ResendFromEmail { get; set; } = string.Empty; // e.g. "onboarding@resend.dev" or verified sender
     public string SenderName { get; set; } = string.Empty;
     public string SenderEmail { get; set; } = string.Empty;
 
@@ -44,9 +45,14 @@ public class EmailService : IEmailService
 
         try
         {
+            // Use ResendFromEmail if set (overrides SenderEmail for Resend sender verification)
+            var fromAddress = !string.IsNullOrWhiteSpace(_settings.ResendFromEmail)
+                ? _settings.ResendFromEmail
+                : _settings.SenderEmail;
+
             var from = string.IsNullOrWhiteSpace(_settings.SenderName)
-                ? _settings.SenderEmail
-                : $"{_settings.SenderName} <{_settings.SenderEmail}>";
+                ? fromAddress
+                : $"{_settings.SenderName} <{fromAddress}>";
 
             var payload = JsonSerializer.Serialize(new
             {

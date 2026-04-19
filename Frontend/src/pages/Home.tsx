@@ -33,7 +33,7 @@ export const Home: React.FC = () => {
          {/* Hero Section */}
          <div className="relative bg-gray-900 h-[500px] md:h-[600px] flex items-center justify-center">
             <img
-               src="https://images.unsplash.com/photo-1600596542815-e32870110029?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
+               src="https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
                alt="Modern Home"
                className="absolute inset-0 w-full h-full object-cover opacity-60"
             />
@@ -52,8 +52,8 @@ export const Home: React.FC = () => {
                   <div className="flex-1 relative">
                      <select className="w-full px-4 py-3 rounded-md border-0 focus:ring-2 focus:ring-primary-500 bg-gray-50 text-gray-500">
                         <option>Price range</option>
-                        <option>$100k - $500k</option>
-                        <option>$500k - $1M</option>
+                        <option>NRP 100k - NRP 500k</option>
+                        <option>NRP 500k - NRP 1M</option>
                      </select>
                   </div>
                   <div className="flex-1 relative">

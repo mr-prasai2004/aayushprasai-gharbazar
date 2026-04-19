@@ -3,8 +3,10 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { UserRole } from '../../types';
 import { authApi, uploadApi } from '../../services/api';
 import { Camera, Edit2, Save, Loader2 } from 'lucide-react';
+import { useToast } from '../../components/Toast';
 
 export const Profile: React.FC = () => {
+    const toast = useToast();
     const [isEditing, setIsEditing] = useState(false);
     const [user, setUser] = useState({
         full_name: '',
@@ -65,13 +67,13 @@ export const Profile: React.FC = () => {
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            alert('Please select an image file');
+            toast.error('Please select an image file');
             return;
         }
 
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            alert('Image size should be less than 5MB');
+            toast.error('Image size should be less than 5MB');
             return;
         }
 
@@ -81,7 +83,7 @@ export const Profile: React.FC = () => {
             setProfileImage(uploadApi.getFileUrl(result.url));
         } catch (error) {
             console.error('Failed to upload image', error);
-            alert('Failed to upload image. Please try again.');
+            toast.error('Failed to upload image. Please try again.');
         } finally {
             setUploading(false);
         }
@@ -99,10 +101,10 @@ export const Profile: React.FC = () => {
 
             await authApi.updateProfile(updateData);
             setIsEditing(false);
-            alert("Profile updated successfully!");
+            toast.success("Profile updated successfully!");
         } catch (error) {
             console.error("Failed to update profile", error);
-            alert("Failed to update profile. Please try again.");
+            toast.error("Failed to update profile. Please try again.");
         }
     };
 

@@ -3,10 +3,13 @@ import { DashboardLayout } from '../../../components/layout';
 import { UserRole } from '../../../types';
 import { reviewsApi } from '../../../services/api';
 import { Star, Trash2 } from 'lucide-react';
+import { useToast } from '../../../components/Toast';
 
 export const ReviewsFeedback: React.FC = () => {
+    const toast = useToast();
     const [reviews, setReviews] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchReviews = async () => {
@@ -27,14 +30,18 @@ export const ReviewsFeedback: React.FC = () => {
     }, []);
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('Delete this review?')) {
-            try {
-                await reviewsApi.delete(id);
-                setReviews(reviews.filter(r => r.reviewId !== id));
-            } catch (err) {
-                console.error('Failed to delete review', err);
-                alert('Failed to delete review');
-            }
+        if (confirmDeleteId !== id) {
+            setConfirmDeleteId(id);
+            return;
+        }
+        setConfirmDeleteId(null);
+        try {
+            await reviewsApi.delete(id);
+            setReviews(reviews.filter(r => r.reviewId !== id));
+            toast.success('Review deleted.');
+        } catch (err) {
+            console.error('Failed to delete review', err);
+            toast.error('Failed to delete review');
         }
     };
 
@@ -59,7 +66,11 @@ export const ReviewsFeedback: React.FC = () => {
                                 <button
                                     onClick={() => handleDelete(r.reviewId)}
                                     className="text-gray-300 hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition duration-200">
-                                    <Trash2 className="h-4 w-4" />
+                                    {confirmDeleteId === r.reviewId ? (
+                                        <span className="text-xs font-semibold text-red-600">Confirm?</span>
+                                    ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                    )}
                                 </button>
                             </div>
                             <p className="text-gray-600 text-sm mb-4 italic">"{r.comment}"</p>

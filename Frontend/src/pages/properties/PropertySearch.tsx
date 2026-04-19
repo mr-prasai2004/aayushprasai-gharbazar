@@ -57,9 +57,9 @@ export const PropertySearch: React.FC = () => {
         let matchesPrice = true;
         if (priceRange !== 'All') {
             const price = property.price;
-            if (priceRange === 'under-500k') matchesPrice = price < 500000;
-            else if (priceRange === '500k-1m') matchesPrice = price >= 500000 && price <= 1000000;
-            else if (priceRange === 'over-1m') matchesPrice = price > 1000000;
+            if (priceRange === 'under-500000') matchesPrice = price < 500000;
+            else if (priceRange === '500000-1000000') matchesPrice = price >= 500000 && price <= 1000000;
+            else if (priceRange === 'over-1000000') matchesPrice = price > 1000000;
         }
 
         // 4. Bedrooms Filter
@@ -128,9 +128,9 @@ export const PropertySearch: React.FC = () => {
                                 onChange={(e) => setPriceRange(e.target.value)}
                             >
                                 <option value="All">Any Price</option>
-                                <option value="under-500k">Under $500k</option>
-                                <option value="500k-1m">$500k - $1M</option>
-                                <option value="over-1m">Over $1M</option>
+                                <option value="under-500000">Under NRP 500k</option>
+                                <option value="500000-1000000">NRP 500k - NRP 1M</option>
+                                <option value="over-1000000">Over NRP 1M</option>
                             </select>
                         </div>
 

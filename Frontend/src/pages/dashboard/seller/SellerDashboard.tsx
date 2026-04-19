@@ -9,16 +9,19 @@ import Listings from './Listings';
 import SellerTourBookings from './SellerTourBookings';
 import { Messages } from '../Messages';
 import EditPropertyModal from './EditPropertyModal';
+import { useToast } from '../../../components/Toast';
 
 export const SellerDashboard: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const toast = useToast();
     const [activeTab, setActiveTab] = useState('Overview');
     const [listings, setListings] = useState<any[]>([]);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingProperty, setEditingProperty] = useState<any>(null);
     const [editFormData, setEditFormData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     const handleTabClick = (tab: string) => {
         // Navigate to route when user clicks tab so URL + sidebar stay in sync
@@ -66,32 +69,36 @@ export const SellerDashboard: React.FC = () => {
 
     const handleSaveEdit = async () => {
         if (!editFormData.title || !editFormData.price) {
-            alert('Please fill in all required fields');
+            toast.warning('Please fill in all required fields');
             return;
         }
 
         try {
             const updated = await propertiesApi.update(editingProperty.propertyId, editFormData);
             setListings(prev => prev.map(p => p.propertyId === editingProperty.propertyId ? updated : p));
-            alert('Property updated successfully!');
+            toast.success('Property updated successfully!');
             setShowEditModal(false);
             setEditingProperty(null);
             setEditFormData(null);
         } catch (err) {
             console.error('Failed to update property', err);
-            alert('Failed to update property');
+            toast.error('Failed to update property');
         }
     };
 
     const handleDeleteListing = async (id: string) => {
-        if (window.confirm('Are you sure you want to remove this listing?')) {
-            try {
-                await propertiesApi.delete(id);
-                setListings(prev => prev.filter(p => p.propertyId !== id));
-            } catch (err) {
-                console.error('Failed to delete property', err);
-                alert('Failed to delete property');
-            }
+        if (confirmDeleteId !== id) {
+            setConfirmDeleteId(id);
+            return;
+        }
+        setConfirmDeleteId(null);
+        try {
+            await propertiesApi.delete(id);
+            setListings(prev => prev.filter(p => p.propertyId !== id));
+            toast.success('Listing removed.');
+        } catch (err) {
+            console.error('Failed to delete property', err);
+            toast.error('Failed to delete property');
         }
     }
 
@@ -101,10 +108,10 @@ export const SellerDashboard: React.FC = () => {
             setListings(prev => prev.map(p =>
                 p.propertyId === propertyId ? { ...p, status: newStatus } : p
             ));
-            alert(`Property status updated to "${newStatus}" successfully!`);
+            toast.success(`Property status updated to "${newStatus}" successfully!`);
         } catch (err) {
             console.error('Failed to update status', err);
-            alert('Failed to update property status. Please try again.');
+            toast.error('Failed to update property status. Please try again.');
             throw err; // re-throw so Listings component knows it failed
         }
     };

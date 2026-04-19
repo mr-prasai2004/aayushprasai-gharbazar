@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, MapPin, CheckCircle, X, AlertCircle } from 'lucide-react';
 import { tourBookingsApi } from '../../../services/api';
+import { useToast } from '../../../components/Toast';
 
 interface TourBooking {
   bookingId: string;
@@ -19,11 +20,13 @@ interface TourBooking {
 }
 
 export const SellerTourBookings: React.FC = () => {
+  const toast = useToast();
   const [bookings, setBookings] = useState<TourBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [confirmDecline, setConfirmDecline] = useState<string | null>(null);
 
   // Format date to readable format
   const formatDate = (dateStr: string) => {
@@ -64,21 +67,27 @@ export const SellerTourBookings: React.FC = () => {
     try {
       await tourBookingsApi.confirm(bookingId);
       setBookings(prev => prev.map(b => b.bookingId === bookingId ? { ...b, status: 'Confirmed' } : b));
+      toast.success('Booking confirmed!');
     } catch (err) {
-      alert('Failed to confirm booking. Please try again.');
+      toast.error('Failed to confirm booking. Please try again.');
     } finally {
       setUpdating(null);
     }
   };
 
   const handleDecline = async (bookingId: string) => {
-    if (!window.confirm('Are you sure you want to decline this tour request?')) return;
+    if (confirmDecline !== bookingId) {
+      setConfirmDecline(bookingId);
+      return;
+    }
+    setConfirmDecline(null);
     setUpdating(bookingId);
     try {
       await tourBookingsApi.decline(bookingId);
       setBookings(prev => prev.map(b => b.bookingId === bookingId ? { ...b, status: 'Cancelled' } : b));
+      toast.success('Booking declined.');
     } catch (err) {
-      alert('Failed to decline booking. Please try again.');
+      toast.error('Failed to decline booking. Please try again.');
     } finally {
       setUpdating(null);
     }
@@ -259,14 +268,23 @@ export const SellerTourBookings: React.FC = () => {
                     <CheckCircle className="h-4 w-4" />
                     {updating === booking.bookingId ? 'Updating...' : 'Confirm Booking'}
                   </button>
-                  <button
-                    onClick={() => handleDecline(booking.bookingId)}
-                    disabled={updating === booking.bookingId}
-                    className="flex-1 flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    <X className="h-4 w-4" />
-                    {updating === booking.bookingId ? 'Updating...' : 'Decline'}
-                  </button>
+
+                  {confirmDecline === booking.bookingId ? (
+                    <div className="flex-1 flex items-center justify-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3">
+                      <span className="text-sm text-red-700 font-medium">Decline?</span>
+                      <button onClick={() => handleDecline(booking.bookingId)} className="text-sm font-semibold text-red-700 hover:underline">Yes</button>
+                      <button onClick={() => setConfirmDecline(null)} className="text-sm text-gray-500 hover:underline">No</button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleDecline(booking.bookingId)}
+                      disabled={updating === booking.bookingId}
+                      className="flex-1 flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      <X className="h-4 w-4" />
+                      Decline
+                    </button>
+                  )}
                 </div>
               )}
 

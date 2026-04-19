@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, Bed, Bath, Move, Heart } from 'lucide-react';
 import { Property } from '../types';
 import { wishlistApi } from '../services/api';
+import { useToast } from './Toast';
 
 interface PropertyCardProps {
   property: Property;
@@ -11,6 +12,7 @@ interface PropertyCardProps {
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
@@ -43,7 +45,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
 
     const token = localStorage.getItem('authToken');
     if (!token) {
-      alert('Please login to save properties to your wishlist.');
+      toast.info('Please login to save properties to your wishlist.');
       return;
     }
 
@@ -58,7 +60,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
       }
     } catch (err) {
       console.error('Failed to update wishlist', err);
-      alert('Failed to update wishlist. Please try again later.');
+      toast.error('Failed to update wishlist. Please try again later.');
     } finally {
       setIsWishlistLoading(false);
     }

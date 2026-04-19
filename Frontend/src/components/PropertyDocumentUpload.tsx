@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, X, FileText, Check, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
 import { documentsApi, uploadApi } from '../services/api';
+import { useToast } from './Toast';
 
 interface Document {
   documentId: string;
@@ -21,12 +22,16 @@ interface PropertyDocumentUploadProps {
 }
 
 const DOCUMENT_TYPES = [
-  'Title Deed',
-  'Property Survey',
-  'Tax Certificate',
+  'Lalpurja (Land Ownership Certificate)',
+  'Naapi Naksha (Land Survey Map)',
+  'Char Killa Praman Patra (Four Boundary Certificate)',
+  'Malpot Receipt (Land Tax Receipt)',
+  'Naamsar (Transfer of Ownership)',
+  'Building Permit',
+  'Completion Certificate',
+  'House Number Certificate',
   'NOC (No Objection Certificate)',
-  'Building Plan',
-  'Environmental Clearance',
+  'Naagarikta (Citizenship)',
   'Other'
 ];
 
@@ -56,12 +61,14 @@ export const PropertyDocumentUpload: React.FC<PropertyDocumentUploadProps> = ({
   onDocumentsChange,
   readOnly = false,
 }) => {
+  const toast = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedType, setSelectedType] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch fresh docs from backend on mount / propertyId change
@@ -81,7 +88,7 @@ export const PropertyDocumentUpload: React.FC<PropertyDocumentUploadProps> = ({
         }
       })
       .finally(() => setLoadingDocs(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,15 +130,20 @@ export const PropertyDocumentUpload: React.FC<PropertyDocumentUploadProps> = ({
   };
 
   const handleRemoveDocument = async (docId: string) => {
-    if (!window.confirm('Are you sure you want to remove this document?')) return;
+    if (confirmDeleteId !== docId) {
+      setConfirmDeleteId(docId);
+      return;
+    }
+    setConfirmDeleteId(null);
     setDeletingId(docId);
     try {
       await documentsApi.delete(docId);
       const updated = documents.filter(d => d.documentId !== docId);
       setDocuments(updated);
       onDocumentsChange?.(updated);
+      toast.success('Document removed.');
     } catch {
-      alert('Failed to delete document. Please try again.');
+      toast.error('Failed to delete document. Please try again.');
     } finally {
       setDeletingId(null);
     }
@@ -263,17 +275,26 @@ export const PropertyDocumentUpload: React.FC<PropertyDocumentUploadProps> = ({
                   </a>
                 )}
                 {!readOnly && (
-                  <button
-                    onClick={() => handleRemoveDocument(doc.documentId)}
-                    disabled={deletingId === doc.documentId}
-                    className="text-gray-400 hover:text-red-600 transition disabled:opacity-40 p-1"
-                    title="Delete document"
-                  >
-                    {deletingId === doc.documentId
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : <X className="h-4 w-4" />
-                    }
-                  </button>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {confirmDeleteId === doc.documentId ? (
+                      <>
+                        <button onClick={() => handleRemoveDocument(doc.documentId)} className="text-xs font-bold text-red-600 hover:underline">Yes, remove</button>
+                        <button onClick={() => setConfirmDeleteId(null)} className="text-xs text-gray-500 hover:underline">Cancel</button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleRemoveDocument(doc.documentId)}
+                        disabled={deletingId === doc.documentId}
+                        className="text-gray-400 hover:text-red-600 transition disabled:opacity-40 p-1"
+                        title="Delete document"
+                      >
+                        {deletingId === doc.documentId
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <X className="h-4 w-4" />
+                        }
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
